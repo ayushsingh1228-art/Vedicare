@@ -108,6 +108,9 @@ html.dark .glass-card {
 html.dark .bg-white,
 html.dark .bg-ivory,
 html.dark .bg-cream,
+html.dark [class*="bg-white/80"],
+html.dark [class*="bg-white/90"],
+html.dark [class*="bg-white/70"],
 html.dark [class*="bg-[#F7F3EE]"],
 html.dark [class*="bg-[#FAF9F6]"],
 html.dark [class*="bg-[#F5F1EB]"],
@@ -119,6 +122,11 @@ html.dark [class*="bg-[#F3EFE6]"],
 html.dark [class*="bg-[#faf9f6]"],
 html.dark [class*="bg-[#f7f3ee]"] {
   background-color: #1e293b !important;
+}
+
+/* Quick action icon badges in dark mode */
+html.dark [class*="bg-[#F7EFE8]"] {
+  background-color: #334155 !important;
 }
 
 /* Dark strip panels stay darker */
