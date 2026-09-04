@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
-import { Stethoscope, Loader2, Check, X, Clock } from "lucide-react";
+import { Stethoscope, Loader2, Clock, X, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 const TIMES = ["09:00", "10:30", "12:00", "15:00", "16:30", "18:00"];
@@ -22,6 +22,7 @@ export default function Appointments() {
   const [reason, setReason] = useState("");
   const [appts, setAppts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [cancelling, setCancelling] = useState(null);
 
   const load = async () => {
     const [d, a] = await Promise.all([api.get("/doctors"), api.get("/appointments")]);
@@ -49,6 +50,18 @@ export default function Appointments() {
     } finally { setLoading(false); }
   };
 
+  const cancel = async (apptId) => {
+    if (!window.confirm("Cancel this appointment?")) return;
+    setCancelling(apptId);
+    try {
+      await api.delete(`/appointments/${apptId}`);
+      toast.success("Appointment cancelled");
+      load();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || "Could not cancel");
+    } finally { setCancelling(null); }
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F3EE]">
       <Navbar />
@@ -63,20 +76,27 @@ export default function Appointments() {
           {/* Doctors */}
           <section className="bg-white border border-[#E7DED0] rounded-[28px] p-6 md:p-7">
             <h2 className="font-serif text-2xl mb-4 text-ink">Choose your doctor</h2>
-            <div className="space-y-3">
-              {doctors.map((d) => (
-                <button key={d.id} data-testid={`doctor-${d.id}`} onClick={() => setSelectedDoc(d)}
-                  className={`w-full text-left flex gap-4 items-center p-4 rounded-2xl border transition ${selectedDoc?.id === d.id ? 'border-saffron bg-saffron-light/40' : 'border-[#E8E1D5] hover:border-saffron/60'}`}>
-                  <div className="w-12 h-12 rounded-full bg-herb-light flex items-center justify-center">
-                    <Stethoscope className="w-6 h-6 text-herb" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-serif text-xl text-ink">{d.name}</div>
-                    <div className="text-sm text-ink/60">{d.specialization}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            {doctors.length === 0 ? (
+              <div className="flex flex-col items-center py-10 text-center">
+                <AlertCircle className="w-8 h-8 text-ink/30 mb-3" />
+                <p className="text-ink/60 text-sm">No doctors available yet.<br />Check back soon.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {doctors.map((d) => (
+                  <button key={d.id} data-testid={`doctor-${d.id}`} onClick={() => setSelectedDoc(d)}
+                    className={`w-full text-left flex gap-4 items-center p-4 rounded-2xl border transition ${selectedDoc?.id === d.id ? 'border-saffron bg-saffron-light/40' : 'border-[#E8E1D5] hover:border-saffron/60'}`}>
+                    <div className="w-12 h-12 rounded-full bg-herb-light flex items-center justify-center">
+                      <Stethoscope className="w-6 h-6 text-herb" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-serif text-xl text-ink">{d.name}</div>
+                      <div className="text-sm text-ink/60">{d.specialization}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* Calendar + slots */}
@@ -116,7 +136,7 @@ export default function Appointments() {
                 <div key={a.id} data-testid={`appt-${a.id}`} className="bg-white border border-[#E8E1D5] rounded-2xl p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="font-serif text-xl text-ink">{a.doctor_name}</div>
+                      <div className="font-serif text-xl text-ink">{a.doctor_name || a.patient_name}</div>
                       <div className="text-sm text-ink/60 flex items-center gap-1 mt-1">
                         <Clock className="w-3.5 h-3.5" /> {a.date} · {a.time}
                       </div>
@@ -124,6 +144,16 @@ export default function Appointments() {
                     <span className={`text-xs px-3 py-1 rounded-full font-medium capitalize ${statusPill(a.status)}`}>{a.status}</span>
                   </div>
                   {a.reason && <p className="text-sm text-ink/70 mt-3">{a.reason}</p>}
+                  {a.status === "pending" && a.patient_id && (
+                    <button
+                      onClick={() => cancel(a.id)}
+                      disabled={cancelling === a.id}
+                      className="mt-4 w-full flex items-center justify-center gap-1.5 text-sm text-red-500 border border-red-100 hover:bg-red-50 rounded-xl py-2 transition"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      {cancelling === a.id ? "Cancelling…" : "Cancel appointment"}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -133,3 +163,4 @@ export default function Appointments() {
     </div>
   );
 }
+

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Send, Loader2, Sparkles, Leaf, Mic, Volume2, Square, Receipt, Bot, User } from "lucide-react";
+import { Send, Loader2, Sparkles, Leaf, Mic, Volume2, Square, Receipt, Bot, User, Trash2 } from "lucide-react";
 
 const suggestions = [
   { text: "What is my dosha likely to be?", icon: Leaf, color: "text-herb bg-[#E5F0E2]" },
@@ -31,6 +31,11 @@ export default function Chatbot() {
     recognitionRef.current?.stop();
     window.clearTimeout(voiceTimerRef.current);
   }, []);
+
+  const clearChat = () => {
+    setMessages([]);
+    toast.success("Chat cleared");
+  };
 
   const toggleVoiceInput = async () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -94,17 +99,28 @@ export default function Chatbot() {
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-4">
 
         {/* Header */}
-        <div className="flex items-center gap-4 px-2">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-saffron to-orange-500 flex items-center justify-center shadow-lg shadow-saffron/30">
-              <Sparkles className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between gap-4 px-2">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-saffron to-orange-500 flex items-center justify-center shadow-lg shadow-saffron/30">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-herb border-2 border-white" title="Online" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-herb border-2 border-white" title="Online" />
+            <div>
+              <h1 className="font-serif text-2xl text-ink leading-none">Vediccare AI</h1>
+              <p className="text-xs text-ink/50 mt-0.5">Wellness · Ayurveda · Billing help · Not medical diagnosis</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-serif text-2xl text-ink leading-none">Vediccare AI</h1>
-            <p className="text-xs text-ink/50 mt-0.5">Wellness · Ayurveda · Billing help · Not medical diagnosis</p>
-          </div>
+          {messages.length > 0 && (
+            <button
+              onClick={clearChat}
+              title="Clear chat"
+              className="flex items-center gap-1.5 text-xs text-ink/50 hover:text-red-500 border border-[#E8E1D5] hover:border-red-200 rounded-xl px-3 py-2 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear
+            </button>
+          )}
         </div>
 
         {/* Chat window */}
@@ -113,7 +129,7 @@ export default function Chatbot() {
           className="flex-1 bg-white/80 backdrop-blur-xl border border-[#E8E1D5] rounded-3xl overflow-y-auto min-h-[420px] max-h-[60vh] p-6 space-y-1"
           style={{ scrollbarWidth: "thin" }}
         >
-          {/* Empty state */}
+          {/* Empty state + suggestions (show when 0 messages OR after clearing) */}
           {messages.length === 0 && !loading && (
             <div className="h-full flex flex-col items-center justify-center text-center py-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-herb-light to-saffron-light flex items-center justify-center mb-4 border border-[#E8E1D5]">

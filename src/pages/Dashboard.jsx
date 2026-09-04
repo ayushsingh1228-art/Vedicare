@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 import {
   MessagesSquare,
   CalendarCheck,
@@ -12,6 +14,7 @@ import {
   Clock3,
   HeartPulse,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -40,12 +43,14 @@ const quickActions = [
     accent: "text-ink",
     testid: "hub-records",
   },
-];
-
-const rhythmNotes = [
-  { label: "Today", value: "2 care tasks" },
-  { label: "Doctor", value: "3 slots open" },
-  { label: "Medicine", value: "1 reminder due" },
+  {
+    to: "/dosha-quiz",
+    title: "Dosha Quiz",
+    desc: "Discover your Ayurvedic body type — Vata, Pitta, or Kapha.",
+    icon: Sparkles,
+    accent: "text-violet-600",
+    testid: "hub-dosha",
+  },
 ];
 
 const wellnessNotes = [
@@ -58,14 +63,14 @@ const wellnessNotes = [
   },
   {
     title: "Dosha check",
-    text: "Pitta is active today. Keep hydration steady and avoid overloading the afternoon.",
+    text: "Take the Dosha Quiz to get personalised Ayurvedic insights based on your unique body type.",
     tone: "bg-[#eef3ea] text-ink",
     iconTone: "bg-[#E5F0E2] text-herb",
     icon: Leaf,
   },
   {
     title: "Care tasks",
-    text: "Medication reminder is due this evening and your appointment follow-up is still open.",
+    text: "Check your medicine reminders and upcoming appointments to stay on track today.",
     tone: "bg-[#f5f0fa] text-ink",
     iconTone: "bg-[#ECE8F5] text-[#7560A8]",
     icon: Bell,
@@ -77,6 +82,40 @@ export default function Dashboard() {
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = user?.name?.split(" ")[0] || "there";
+
+  const [stats, setStats] = useState({ appointments: "…", medicines: "…", records: "…" });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [appts, meds, recs] = await Promise.all([
+          api.get("/appointments"),
+          api.get("/medicines"),
+          api.get("/records"),
+        ]);
+        const pending = (appts.data || []).filter((a) => a.status === "pending").length;
+        const today = new Date().toISOString().slice(0, 10);
+        const dueMeds = (meds.data || []).filter(
+          (m) => m.start_date <= today && m.end_date >= today && !m.taken_today
+        ).length;
+        setStats({
+          appointments: pending ? `${pending} pending` : "None pending",
+          medicines: dueMeds ? `${dueMeds} due today` : "All done",
+          records: `${(recs.data || []).length} saved`,
+        });
+      } catch {
+        setStats({ appointments: "—", medicines: "—", records: "—" });
+      }
+    };
+    load();
+  }, []);
+
+  const rhythmNotes = [
+    { label: "Appointments", value: stats.appointments },
+    { label: "Medicines", value: stats.medicines },
+    { label: "Records", value: stats.records },
+  ];
+
 
   return (
     <div className="min-h-screen bg-[#F7F3EE] text-[#1E1D1A]">

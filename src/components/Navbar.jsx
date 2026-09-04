@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
-import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
+import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium, User } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -22,6 +23,7 @@ export default function Navbar() {
           { to: "/records",      label: "Records",   icon: FileHeart },
           { to: "/wellness",     label: "Wellness",  icon: Sparkles },
           { to: "/medicines",    label: "Reminders", icon: Bell },
+          { to: "/dosha-quiz",   label: "Dosha",     icon: Sparkles },
         ];
 
   const initials = user?.name
@@ -68,6 +70,9 @@ export default function Navbar() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Notification Bell */}
+          {user && <NotificationBell />}
+
           {/* Dark mode toggle */}
           <button
             type="button"
@@ -94,17 +99,18 @@ export default function Navbar() {
             {isHindi ? "EN" : "हि"}
           </button>
 
-          {/* User avatar */}
+          {/* User avatar → links to Profile */}
           {user && (
-            <div
-              className="hidden sm:flex items-center gap-2 bg-white border border-[#E8E1D5] rounded-xl px-3 py-1.5"
+            <Link
+              to="/profile"
+              className="hidden sm:flex items-center gap-2 bg-white border border-[#E8E1D5] rounded-xl px-3 py-1.5 hover:border-saffron/50 transition"
               data-testid="nav-user"
             >
               <div className="w-7 h-7 rounded-lg bg-[#EEF3EA] flex items-center justify-center text-xs font-bold text-herb border border-herb/20">
                 {initials}
               </div>
               <span className="text-sm font-medium text-ink/80 max-w-[100px] truncate">{user.name.split(" ")[0]}</span>
-            </div>
+            </Link>
           )}
 
           {/* Logout */}

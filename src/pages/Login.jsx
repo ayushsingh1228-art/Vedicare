@@ -84,6 +84,9 @@ export default function Login() {
           <p className="text-sm text-ink/60 mt-6 text-center">
             New here? <Link to="/register" className="text-saffron font-medium" data-testid="login-goregister">Create an account</Link>
           </p>
+          <p className="text-sm text-ink/60 mt-2 text-center">
+            <Link to="/forgot-password" className="text-saffron/80 hover:text-saffron">Forgot your password?</Link>
+          </p>
         </div>
 
         <p className="text-xs text-ink/40 text-center mt-6">

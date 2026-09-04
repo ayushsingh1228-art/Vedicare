@@ -7,12 +7,15 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
 import Dashboard from "@/pages/Dashboard";
 import Chatbot from "@/pages/Chatbot";
 import Appointments from "@/pages/Appointments";
 import Records from "@/pages/Records";
 import Wellness from "@/pages/Wellness";
 import Medicines from "@/pages/Medicines";
+import Profile from "@/pages/Profile";
+import DoshaQuiz from "@/pages/DoshaQuiz";
 import DoctorDashboard from "@/pages/DoctorDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 
@@ -36,12 +39,15 @@ export default function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
               <Route path="/chatbot" element={<Protected><Chatbot /></Protected>} />
               <Route path="/appointments" element={<Protected><Appointments /></Protected>} />
               <Route path="/records" element={<Protected><Records /></Protected>} />
               <Route path="/wellness" element={<Protected><Wellness /></Protected>} />
               <Route path="/medicines" element={<Protected><Medicines /></Protected>} />
+              <Route path="/profile" element={<Protected><Profile /></Protected>} />
+              <Route path="/dosha-quiz" element={<Protected><DoshaQuiz /></Protected>} />
               <Route path="/doctor" element={<Protected doctor><DoctorDashboard /></Protected>} />
               <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -52,3 +58,4 @@ export default function App() {
     </ThemeProvider>
   );
 }
+

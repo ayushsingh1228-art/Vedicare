@@ -100,6 +100,23 @@ class AppointmentUpdate(BaseModel):
     status: str  # approved | rejected | pending
 
 
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    password: Optional[str] = None
+
+
+class RecordUpdate(BaseModel):
+    title: Optional[str] = None
+    notes: Optional[str] = None
+    date: Optional[str] = None
+    doctor_name: Optional[str] = None
+
+
+class DoshaResult(BaseModel):
+    dosha: str  # vata | pitta | kapha
+    scores: dict
+
+
 class HealthRecordCreate(BaseModel):
     title: str
     record_type: str  # prescription | lab_report | discharge_summary | other
@@ -330,6 +347,84 @@ async def me(user=Depends(get_current_user)):
     return user
 
 
+@api_router.patch("/auth/me")
+async def update_profile(data: ProfileUpdate, user=Depends(get_current_user)):
+    update = {}
+    if data.name and data.name.strip():
+        update["name"] = data.name.strip()
+    if data.password and len(data.password) >= 6:
+        update["password"] = hash_password(data.password)
+    if not update:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    await db.users.update_one({"id": user["id"]}, {"$set": update})
+    updated = await db.users.find_one({"id": user["id"]}, {"_id": 0, "password": 0})
+    return updated
+
+
+@api_router.get("/notifications")
+async def get_notifications(user=Depends(get_current_user)):
+    notifs = []
+    if user["role"] == "patient":
+        # Recent appointment status changes
+        recent_appts = await db.appointments.find(
+            {"patient_id": user["id"], "status": {"$in": ["approved", "rejected"]}},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(5).to_list(5)
+        for a in recent_appts:
+            emoji = "✅" if a["status"] == "approved" else "❌"
+            notifs.append({
+                "id": a["id"],
+                "message": f"{emoji} Appointment with Dr. {a['doctor_name']} on {a['date']} was {a['status']}",
+                "type": "appointment",
+                "status": a["status"],
+                "created_at": a["created_at"]
+            })
+        # Medicine reminders due today
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        meds = await db.medicines.find(
+            {"user_id": user["id"], "start_date": {"$lte": today}, "end_date": {"$gte": today}},
+            {"_id": 0}
+        ).to_list(10)
+        for m in meds:
+            if not m.get("taken_today"):
+                notifs.append({
+                    "id": m["id"],
+                    "message": f"💊 Medicine reminder: {m['name']} at {m.get('time', 'scheduled time')}",
+                    "type": "medicine",
+                    "created_at": m.get("created_at", today)
+                })
+    elif user["role"] == "doctor":
+        # Pending appointments
+        pending = await db.appointments.find(
+            {"doctor_id": user["id"], "status": "pending"},
+            {"_id": 0}
+        ).sort("created_at", -1).limit(5).to_list(5)
+        for a in pending:
+            notifs.append({
+                "id": a["id"],
+                "message": f"📅 New appointment request from {a['patient_name']} on {a['date']}",
+                "type": "appointment",
+                "status": "pending",
+                "created_at": a["created_at"]
+            })
+    return notifs[:8]
+
+
+@api_router.post("/dosha")
+async def save_dosha(data: DoshaResult, user=Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"dosha": data.dosha, "dosha_scores": data.scores, "dosha_taken_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"dosha": data.dosha, "scores": data.scores}
+
+
+@api_router.get("/dosha")
+async def get_dosha(user=Depends(get_current_user)):
+    u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "password": 0})
+    return {"dosha": u.get("dosha"), "scores": u.get("dosha_scores"), "taken_at": u.get("dosha_taken_at")}
+
+
 # ------------------- Doctors -------------------
 @api_router.get("/doctors")
 async def list_doctors(user=Depends(get_current_user)):
@@ -357,6 +452,43 @@ async def admin_stats(user=Depends(require_admin)):
     }
 
 
+@api_router.get("/admin/analytics")
+async def admin_analytics(user=Depends(require_admin)):
+    # Appointments per day (last 7 days)
+    from datetime import timedelta
+    today = datetime.now(timezone.utc).date()
+    appt_by_day = []
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        day_str = day.isoformat()
+        count = await db.appointments.count_documents({"date": day_str})
+        appt_by_day.append({"day": day.strftime("%a"), "date": day_str, "count": count})
+    
+    # Top wellness conditions
+    pipeline = [
+        {"$group": {"_id": "$condition", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 6}
+    ]
+    top_conditions_raw = await db.wellness.aggregate(pipeline).to_list(6)
+    top_conditions = [{"condition": r["_id"], "count": r["count"]} for r in top_conditions_raw]
+    
+    # Appointment status breakdown
+    pending = await db.appointments.count_documents({"status": "pending"})
+    approved = await db.appointments.count_documents({"status": "approved"})
+    rejected = await db.appointments.count_documents({"status": "rejected"})
+    
+    return {
+        "appointments_by_day": appt_by_day,
+        "top_conditions": top_conditions,
+        "appointment_status": [
+            {"status": "Approved", "count": approved},
+            {"status": "Pending", "count": pending},
+            {"status": "Rejected", "count": rejected},
+        ]
+    }
+
+
 @api_router.get("/admin/users")
 async def admin_users(user=Depends(require_admin)):
     items = await db.users.find({}, {"_id": 0, "password": 0}).sort("created_at", -1).to_list(500)
@@ -369,6 +501,21 @@ async def admin_verify_user(user_id: str, data: UserVerifyUpdate, user=Depends(r
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"status": "ok", "is_verified": data.is_verified}
+
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, user=Depends(require_admin)):
+    target = await db.users.find_one({"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    if target.get("email") in ("admin@vediccare.app", "demo@vediccare.app"):
+        raise HTTPException(status_code=403, detail="Cannot delete system accounts")
+    await db.users.delete_one({"id": user_id})
+    # cascade delete their records, appointments, medicines
+    await db.records.delete_many({"user_id": user_id})
+    await db.appointments.delete_many({"$or": [{"patient_id": user_id}, {"doctor_id": user_id}]})
+    await db.medicines.delete_many({"user_id": user_id})
+    return {"status": "deleted"}
 
 
 # ------------------- Chatbot -------------------
@@ -1115,6 +1262,28 @@ async def create_appointment(data: AppointmentCreate, user=Depends(get_current_u
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.appointments.insert_one(appt)
+    # Notify doctor by email
+    try:
+        doctor_email = doctor.get("email", "")
+        if doctor_email:
+            await send_email(
+                to=doctor_email,
+                subject=f"New Appointment Request — {user['name']}",
+                html=f"""<div style='font-family:sans-serif;max-width:500px'>
+                <h2 style='color:#C85A17'>New Appointment Request</h2>
+                <p>Dear Dr. {doctor['name']},</p>
+                <p><strong>{user['name']}</strong> has requested an appointment.</p>
+                <ul>
+                  <li><strong>Date:</strong> {data.date}</li>
+                  <li><strong>Time:</strong> {data.time}</li>
+                  <li><strong>Reason:</strong> {data.reason or 'Not specified'}</li>
+                </ul>
+                <p>Please log in to Vediccare to approve or reject this appointment.</p>
+                <p style='color:#888;font-size:12px'>Vediccare — Ayurvedic Healthcare Platform</p>
+                </div>"""
+            )
+    except Exception:
+        pass
     appt.pop("_id", None)
     return appt
 
@@ -1139,7 +1308,42 @@ async def update_appointment(appt_id: str, data: AppointmentUpdate, user=Depends
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    # Notify patient by email
+    try:
+        appt = await db.appointments.find_one({"id": appt_id})
+        if appt:
+            patient = await db.users.find_one({"id": appt["patient_id"]})
+            if patient and patient.get("email"):
+                status_word = "approved ✅" if data.status == "approved" else "rejected ❌"
+                await send_email(
+                    to=patient["email"],
+                    subject=f"Your appointment has been {data.status} — Vediccare",
+                    html=f"""<div style='font-family:sans-serif;max-width:500px'>
+                    <h2 style='color:#C85A17'>Appointment {data.status.capitalize()}</h2>
+                    <p>Dear {patient['name']},</p>
+                    <p>Your appointment with <strong>Dr. {appt['doctor_name']}</strong> on <strong>{appt['date']}</strong> at <strong>{appt['time']}</strong> has been <strong>{status_word}</strong>.</p>
+                    {"<p>Please arrive 10 minutes early. We look forward to seeing you!</p>" if data.status == 'approved' else "<p>You can book another appointment at your convenience.</p>"}
+                    <p style='color:#888;font-size:12px'>Vediccare — Ayurvedic Healthcare Platform</p>
+                    </div>"""
+                )
+    except Exception:
+        pass
     return {"status": "ok"}
+
+
+@api_router.delete("/appointments/{appt_id}")
+async def cancel_appointment(appt_id: str, user=Depends(get_current_user)):
+    if user["role"] not in ("patient", "admin"):
+        raise HTTPException(status_code=403, detail="Only patients can cancel appointments")
+    appt = await db.appointments.find_one({"id": appt_id})
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    if user["role"] == "patient" and appt["patient_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Not your appointment")
+    if appt["status"] == "approved":
+        raise HTTPException(status_code=400, detail="Cannot cancel an already approved appointment. Please contact the doctor.")
+    await db.appointments.delete_one({"id": appt_id})
+    return {"status": "cancelled"}
 
 
 # ------------------- Doctor: Patient Records Access -------------------
@@ -1249,6 +1453,21 @@ async def delete_record(rec_id: str, user=Depends(get_current_user)):
     if r.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Not found")
     return {"status": "ok"}
+
+
+@api_router.patch("/records/{rec_id}")
+async def update_record(rec_id: str, data: RecordUpdate, user=Depends(get_current_user)):
+    update = {k: v for k, v in data.dict().items() if v is not None}
+    if not update:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    result = await db.records.update_one(
+        {"id": rec_id, "user_id": user["id"]},
+        {"$set": update}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Record not found")
+    updated = await db.records.find_one({"id": rec_id}, {"_id": 0})
+    return updated
 
 
 # ------------------- Medicines -------------------
