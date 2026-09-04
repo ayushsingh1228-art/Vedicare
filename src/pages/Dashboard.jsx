@@ -1,0 +1,224 @@
+import { Link } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import { useAuth } from "@/context/AuthContext";
+import {
+  MessagesSquare,
+  CalendarCheck,
+  FileHeart,
+  Bell,
+  ArrowUpRight,
+  Sunrise,
+  Leaf,
+  Clock3,
+  HeartPulse,
+  ShieldCheck,
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+const quickActions = [
+  {
+    to: "/chatbot",
+    title: "Check in",
+    desc: "Ask about symptoms, sleep, digestion, or your next step.",
+    icon: MessagesSquare,
+    accent: "text-saffron",
+    testid: "hub-chatbot",
+  },
+  {
+    to: "/appointments",
+    title: "Book visit",
+    desc: "Choose a doctor and pick a time that fits your day.",
+    icon: CalendarCheck,
+    accent: "text-herb",
+    testid: "hub-appointments",
+  },
+  {
+    to: "/records",
+    title: "Review records",
+    desc: "Find prescriptions, reports, and notes without digging.",
+    icon: FileHeart,
+    accent: "text-ink",
+    testid: "hub-records",
+  },
+];
+
+const rhythmNotes = [
+  { label: "Today", value: "2 care tasks" },
+  { label: "Doctor", value: "3 slots open" },
+  { label: "Medicine", value: "1 reminder due" },
+];
+
+const wellnessNotes = [
+  {
+    title: "Morning rhythm",
+    text: "Warm water, a little sunlight, and a calm start before the day picks up speed.",
+    tone: "bg-[#f7efe7] text-ink",
+    iconTone: "bg-[#F9E7D8] text-saffron",
+    icon: Sunrise,
+  },
+  {
+    title: "Dosha check",
+    text: "Pitta is active today. Keep hydration steady and avoid overloading the afternoon.",
+    tone: "bg-[#eef3ea] text-ink",
+    iconTone: "bg-[#E5F0E2] text-herb",
+    icon: Leaf,
+  },
+  {
+    title: "Care tasks",
+    text: "Medication reminder is due this evening and your appointment follow-up is still open.",
+    tone: "bg-[#f5f0fa] text-ink",
+    iconTone: "bg-[#ECE8F5] text-[#7560A8]",
+    icon: Bell,
+  },
+];
+
+export default function Dashboard() {
+  const { user } = useAuth();
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const firstName = user?.name?.split(" ")[0] || "there";
+
+  return (
+    <div className="min-h-screen bg-[#F7F3EE] text-[#1E1D1A]">
+      <Navbar />
+
+      <main className="max-w-6xl mx-auto px-5 md:px-8 py-8 md:py-12">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="grid lg:grid-cols-[1.45fr_0.75fr] gap-6"
+        >
+          <div className="rounded-[30px] border border-[#E7DED0] bg-[#F9F5F0] p-6 md:p-8 shadow-[0_18px_40px_-28px_rgba(38,28,18,0.22)]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2 rounded-full border border-[#E7DED0] bg-white/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#695B4F]">
+                <Clock3 className="w-3.5 h-3.5" />
+                {greet}
+              </span>
+              <span className="text-[11px] uppercase tracking-[0.18em] text-[#7A6C60]">
+                {new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+              </span>
+            </div>
+
+            <div className="mt-8 max-w-xl">
+              <h1 className="font-serif text-5xl md:text-[4.2rem] leading-[0.92] tracking-[-0.04em] text-[#1E1D1A]">
+                Keep the day
+                <span className="block text-[#C85A17]">steady.</span>
+              </h1>
+              <p className="mt-4 text-base md:text-lg text-[#5F564E] leading-relaxed">
+                You do not need a dozen tools at once. Start with the one thing that matters most today, and let the rest stay in the background.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                to="/chatbot"
+                data-testid="hub-chatbot"
+                className="saffron-btn inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold"
+              >
+                Open AI check-in
+                <ArrowUpRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/appointments"
+                className="inline-flex items-center gap-2 rounded-full border border-[#DCCEBB] bg-white px-5 py-3 text-sm font-medium text-[#2F2C29] hover:border-[#C85A17]/40 hover:text-[#C85A17] transition-colors"
+              >
+                Book a visit
+              </Link>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3 md:gap-6 text-sm text-[#5F564E]">
+              {rhythmNotes.map((item) => (
+                <div key={item.label} className="border-l border-[#E7DED0] first:border-l-0 pl-0 first:pl-0 md:pl-6">
+                  <div className="text-[11px] uppercase tracking-[0.16em] text-[#7A6C60]">{item.label}</div>
+                  <div className="mt-1 font-medium text-[#221F1D]">{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <aside className="rounded-[30px] bg-[#1D1A17] p-6 md:p-7 text-[#F7F3EE] shadow-[0_30px_50px_-30px_rgba(20,15,10,0.6)]">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-[#B8A995]">Today</div>
+                <div className="mt-3 font-serif text-4xl leading-none">{firstName}</div>
+              </div>
+              <div className="rounded-full border border-white/10 bg-white/5 p-2.5">
+                <HeartPulse className="w-5 h-5 text-[#F6C67E]" />
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-[#CCBC9E]">Focus</div>
+                <div className="mt-2 text-xl font-medium text-white">Hydration + rest</div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-[#2A241F] p-4">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-[#CCBC9E]">Next action</div>
+                <div className="mt-2 text-xl font-medium text-white">Answer one quick health check</div>
+              </div>
+            </div>
+
+            <div className="mt-8 border-t border-white/10 pt-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-[#D0C4B5]">Care path</span>
+                <ShieldCheck className="w-4 h-4 text-[#D7B46D]" />
+              </div>
+              <div className="mt-3 text-sm text-[#F7F3EE]/80 leading-relaxed">
+                A gentle check-in first, then a visit only if it adds something useful.
+              </div>
+            </div>
+          </aside>
+        </motion.section>
+
+        <section className="mt-8 grid lg:grid-cols-[0.82fr_1.18fr] gap-6">
+          <div className="rounded-[30px] border border-[#E7DED0] bg-white p-6 md:p-7">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-[#7A6C60]">What needs attention</div>
+            <div className="mt-4 font-serif text-3xl text-[#1E1D1A]">A quick path through the day.</div>
+            <div className="mt-6 space-y-3">
+              {quickActions.map((item) => (
+                <Link
+                  key={item.title}
+                  to={item.to}
+                  data-testid={item.testid}
+                  className="group flex items-start justify-between gap-4 rounded-2xl border border-[#F0E6DB] bg-[#FAF7F3] p-4 transition-colors hover:border-[#D9C4AA] hover:bg-[#F5F0EA]"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-[#F7EFE8]">
+                      <item.icon className={`w-4 h-4 ${item.accent}`} />
+                    </div>
+                    <div>
+                      <div className="text-lg font-medium text-[#1E1D1A]">{item.title}</div>
+                      <div className="mt-0.5 text-sm text-[#5F564E] leading-relaxed">{item.desc}</div>
+                    </div>
+                  </div>
+                  <ArrowUpRight className="mt-1 h-4 w-4 text-[#7A6C60] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {wellnessNotes.map((note) => (
+              <motion.div
+                key={note.title}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className={`${note.tone} rounded-[28px] border border-[#E7DED0] p-5 md:p-6`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${note.iconTone}`}>
+                    <note.icon className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-5 font-serif text-2xl text-[#1E1D1A] leading-tight">{note.title}</div>
+                <p className="mt-3 text-sm leading-relaxed text-[#4E473F]">{note.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
