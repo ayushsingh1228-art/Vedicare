@@ -18,6 +18,9 @@ export default function Medicines() {
     e.preventDefault();
     const times = form.times.split(",").map((t) => t.trim()).filter(Boolean);
     if (times.length === 0) return toast.error("Add at least one time");
+    if (form.end_date && form.end_date < form.start_date) {
+      return toast.error("End date cannot be before start date");
+    }
     try {
       await api.post("/medicines", { ...form, times, end_date: form.end_date || null });
       toast.success("Medicine added");

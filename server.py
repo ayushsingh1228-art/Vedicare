@@ -519,7 +519,7 @@ async def admin_delete_user(user_id: str, user=Depends(require_admin)):
 
 
 # ------------------- Chatbot -------------------
-def fallback_chat_reply(message: str, user_name: str = "there") -> str:
+def fallback_chat_reply(message: str, user_name: str = "there", user_dosha: str = None) -> str:
     """Provide useful Ayurvedic guidance when the LLM is unavailable."""
     lower = message.lower()
     hindi = bool(re.search(r"[\u0900-\u097f]", message))
@@ -529,65 +529,61 @@ def fallback_chat_reply(message: str, user_name: str = "there") -> str:
         # Sleep & Rest (Nidra)
         if any(word in lower for word in ("नींद", "सोना", "अनिद्रा", "नींद न आना")):
             return (
-                f"{user_name}, आयुर्वेद में नींद को 'त्रिउपस्तंभ' (जीवन के तीन स्तंभ) में से एक माना जाता है। \n\n"
-                "**बेहतर नींद के लिए:**\n"
-                "• रात 10 बजे तक सोने जाएं (पित्त शांति के लिए)\n"
-                "• सोने से 1 घंटे पहले गर्म दूध में घी डालकर पिएं\n"
-                "• सोने से 30 मिनट पहले स्क्रीन से दूर रहें\n"
-                "• नियमित दिनचर्या (दिनचर्या) बनाएं\n"
-                "• शाम को तेल की मालिश करें (अभ्यंग)\n\n"
-                "क्या आपको रात में जागने की समस्या है या सोना मुश्किल हो रहा है?"
+                f"{user_name}, आयुर्वेद में नींद को 'उपस्तम्भ' (जीवन का एक स्तंभ) माना गया है। अच्छी नींद के लिए: \n\n"
+                "**अच्छी नींद के लिए:**\n"
+                "• रात 10 बजे से पहले सोएं (पित्त समय से पहले)\n"
+                "• सोने से 1 घंटा पहले स्क्रीन बंद कर दें\n"
+                "• सोने से 30 मिनट पहले हल्दी वाला दूध पिएं\n"
+                "• भ्रामरी प्राणायाम (मधुमक्खी श्वसन) का अभ्यास करें\n"
+                "• पैरों के तलवों की मालिश करें (पादभ्यंग)\n\n"
+                "क्या आप दिन के समय थकान या तनाव का भी अनुभव करते हैं?"
             )
         
         # Stress & Anxiety (Vata Imbalance)
-        if any(word in lower for word in ("तनाव", "चिंता", "घबराहट", "बेचैनी")):
+        if any(word in lower for word in ("तनाव", "चिंता", "घबराहट", "डिप्रेशन")):
             return (
-                f"{user_name}, तनाव आमतौर पर वात की असंतुलन का संकेत है। \n\n"
-                "**तुरंत राहत के लिए:**\n"
-                "• नाड़ी शोधन प्राणायाम: 5 मिनट (बाएं नथुने से सांस लें, दाएं से छोड़ें)\n"
-                "• ध्यान: रोज 10 मिनट शांत बैठें\n"
-                "• गर्म अरंडी का तेल माथे पर लगाएं\n"
-                "• गर्म पानी में नींबू और शहद पिएं\n\n"
-                "**दीर्घकालिक संतुलन के लिए:**\n"
-                "• गर्म, पचने में आसान भोजन करें\n"
-                "• नियमित दिनचर्या रखें\n"
-                "• अश्वगंधा या ब्राह्मी का उपयोग करें (डॉक्टर से पूछें)\n\n"
-                "क्या तनाव किसी विशेष कारण से है?"
+                f"{user_name}, बढ़ा हुआ वात दोष अक्सर चिंता का कारण बनता है। \n\n"
+                "**शांत रहने के उपाय:**\n"
+                "• नाड़ी शोधन प्राणायाम: 5 मिनट (वैकल्पिक नथुने से सांस लेना)\n"
+                "• ध्यान: दिन 10 मिनट मौन बैठें\n"
+                "• भारी भोजन से बचें, गर्म और पका हुआ भोजन लें\n"
+                "• तिल के तेल से सिर की मालिश करें\n\n"
+                "**शांत करने वाली जड़ी-बूटियाँ:**\n"
+                "• अश्वगंधा: रात को गर्म दूध के साथ\n"
+                "• ब्राह्मी: चाय के रूप में\n"
+                "• जटामांसी: सोने से पहले (डॉक्टर की सलाह पर)\n\n"
+                "क्या आपको लगता है कि आप हमेशा जल्दबाजी में रहते हैं?"
             )
         
         # Digestion (Agni)
-        if any(word in lower for word in ("पाचन", "कब्ज", "एसिडिटी", "गैस", "पेट दर्द")):
+        if any(word in lower for word in ("कब्ज", "गैस", "एसिडिटी", "पेट", "पाचन")):
             return (
-                f"{user_name}, पाचन आयुर्वेद का मूल आधार है। \n\n"
-                "**अग्नि (पाचक शक्ति) को मजबूत करने के लिए:**\n"
-                "• खाना धीरे-धीरे, अच्छी तरह चबाकर खाएं\n"
-                "• दिन के मध्य में मुख्य भोजन करें (पित्त के समय)\n"
-                "• भोजन के बाद गुनगुना पानी पिएं\n"
-                "• अदरक की चाय दिन में 2 बार लें\n"
-                "• मैदा और तली हुई चीजें कम करें\n"
-                "• सुबह खाली पेट गुनगुना पानी पिएं\n\n"
-                "**कब्ज के लिए:** रात को गर्म दूध में घी मिलाकर पिएं।\n"
-                "**एसिडिटी के लिए:** दही और ठंडे दूध से बचें।\n\n"
-                "समस्या बनी रहे तो आयुर्वेदिक डॉक्टर से मिलें।"
+                f"{user_name}, आपकी अग्नि (पाचन अग्नि) संतुलित होनी चाहिए। \n\n"
+                "**अग्नि को मजबूत करने के लिए:**\n"
+                "• भोजन हमेशा गर्म और ताजा खाएं\n"
+                "• भोजन से 30 मिनट पहले अदरक और सेंधा नमक चबाएं\n"
+                "• खाते समय ठंडा पानी न पिएं\n"
+                "• भोजन के बीच कम से कम 3-4 घंटे का अंतर रखें\n"
+                "• भोजन के बाद सौंफ चबाएं\n\n"
+                "**कब्ज के लिए:** सोने से पहले गर्म पानी के साथ त्रिफला लें।\n"
+                "**एसिडिटी के लिए:** धनिया की चाय पिएं।\n\n"
+                "क्या आप अक्सर भोजन करते समय कोई और काम (जैसे टीवी देखना) करते हैं?"
             )
         
         # Energy & Vitality (Ojas)
-        if any(word in lower for word in ("थकान", "कमजोरी", "ऊर्जा", "शक्ति", "दुर्बलता")):
+        if any(word in lower for word in ("थकान", "कमजोरी", "ऊर्जा", "शक्ति", "ओजस")):
             return (
-                f"{user_name}, कम ऊर्जा अक्सर असंतुलित दिनचर्या और पाचन से जुड़ी होती है। \n\n"
-                "**ऊर्जा बढ़ाने के लिए:**\n"
-                "• सुबह 6 बजे उठें और धूप में 15 मिनट बैठें\n"
-                "• गर्म दूध में शहद, घी और मेवे मिलाकर नाश्ते में लें\n"
-                "• नारियल का पानी या छाछ दोपहर में पिएं\n"
-                "• शाम को तेल की मालिश करें\n"
-                "• रातभर काम करने से बचें\n"
-                "• तिल, अलसी और बादाम खाएं\n"
-                "• हल्का-फुल्का व्यायाम या योग करें\n\n"
-                "यदि यह 3 सप्ताह से ज्यादा है, तो अपने डॉक्टर को देखें।"
+                f"{user_name}, ओजस (जीवन शक्ति) ही सच्ची ऊर्जा और रोग प्रतिरोधक क्षमता का आधार है। \n\n"
+                "**ओजस बढ़ाने के उपाय:**\n"
+                "• रात 10 बजे से सुबह 6 बजे तक पर्याप्त नींद लें\n"
+                "• सात्विक आहार लें (ताजा फल, मेवे, घी, दूध)\n"
+                "• अत्यधिक व्यायाम से बचें, योग और टहलना चुनें\n"
+                "• ध्यान करें और शांत रहें\n"
+                "• च्यवनप्राश का सेवन करें (सर्दियों में)\n\n"
+                "क्या आप दिन के समय ऊर्जा में गिरावट महसूस करते हैं?"
             )
         
         # Skin & Immunity (Tejas)
-        if any(word in lower for word in ("त्वचा", "खुजली", "दाने", "मुंहासे", "रोग प्रतिरोधक", "प्रतिरक्षा")):
             return (
                 f"{user_name}, स्वस्थ त्वचा और रोग प्रतिरोधक क्षमता शुद्ध आहार से आती है। \n\n"
                 "**त्वचा और प्रतिरक्षा के लिए:**\n"
@@ -779,6 +775,11 @@ def fallback_chat_reply(message: str, user_name: str = "there") -> str:
     
     # Dosha Information
     if any(word in lower for word in ("dosha", "vata", "pitta", "kapha", "constitution", "type")):
+        if user_dosha:
+            return (
+                f"{user_name}, according to your profile, your primary dosha is **{user_dosha.capitalize()}**.\n\n"
+                "To keep your constitution balanced, follow our lifestyle recommendations or consult with one of our Ayurvedic doctors for a personalized plan."
+            )
         return (
             f"{user_name}, understanding your dosha (constitution) is key to Ayurvedic wellness:\n\n"
             "**Vata (Air + Ether):** Light, dry, cold\n"
@@ -790,7 +791,7 @@ def fallback_chat_reply(message: str, user_name: str = "there") -> str:
             "**Kapha (Earth + Water):** Heavy, damp, stable\n"
             "Signs: Sturdiness, lethargy, weight gain, sluggish digestion\n"
             "Balance: Warm, light foods; exercise; stimulating activities\n\n"
-            "To discover your unique dosha combination, consult one of our Ayurvedic doctors."
+            "To discover your unique dosha combination, please take the Dosha Quiz in the app or consult one of our Ayurvedic doctors."
         )
     
     # Seasonal Routine
@@ -895,8 +896,15 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
         "REMEMBER: You represent Vediccare's commitment to bringing Ayurveda into modern wellness. Be the warm, "
         "knowledgeable friend every patient deserves. Always close with compassion and hope."
     )
+    
+    # Fetch user's dosha if available
+    u = await db.users.find_one({"id": user["id"]})
+    user_dosha = u.get("dosha") if u else None
+    if user_dosha:
+        system_msg += f"\n\nPATIENT DOSHA: The user's primary dosha is **{user_dosha.capitalize()}**. Tailor your advice to this constitution."
+
     if LlmChat is None:
-        reply = fallback_chat_reply(data.message, user["name"].split(" ")[0])
+        reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
     else:
         llm = LlmChat(
             api_key=EMERGENT_LLM_KEY,
@@ -907,7 +915,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
             reply = await llm.send_message(UserMessage(text=data.message))
         except Exception as e:
             logger.error(f"LLM error: {e}")
-            reply = fallback_chat_reply(data.message, user["name"].split(" ")[0])
+            reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
 
     now = datetime.now(timezone.utc).isoformat()
     await db.chat_messages.insert_many([

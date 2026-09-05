@@ -13,7 +13,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico"],
       manifest: {
-        name: "Vediccare — Ayurvedic Healthcare",
+        name: "Vediccare - Ayurvedic Healthcare",
         short_name: "Vediccare",
         description: "AI-powered Ayurvedic healthcare platform",
         theme_color: "#C85A17",
@@ -22,6 +22,8 @@ export default defineConfig({
         start_url: "/",
         icons: [
           { src: "/favicon.ico", sizes: "64x64", type: "image/x-icon" },
+          { src: "/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
+          { src: "/icon-512.svg", sizes: "512x512", type: "image/svg+xml" }
         ],
       },
     }),

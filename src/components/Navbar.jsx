@@ -1,9 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
-import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium, User } from "lucide-react";
+import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium, User, Download } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -11,6 +12,25 @@ export default function Navbar() {
   const { isDark, toggleTheme } = useTheme();
   const loc = useLocation();
   const nav = useNavigate();
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const links = user?.role === "doctor"
     ? [{ to: "/doctor", label: "Appointments", icon: Stethoscope }]
@@ -43,7 +63,7 @@ export default function Navbar() {
           <div className="w-9 h-9 rounded-xl bg-[#C85A17] flex items-center justify-center shadow-md shadow-saffron/20">
             <Leaf className="w-4.5 h-4.5 text-white" style={{ width: "1.1rem", height: "1.1rem" }} />
           </div>
-          <span className="font-serif text-2xl tracking-tight text-ink">Vediccare</span>
+          <span className="font-serif text-2xl tracking-tight text-ink dark:text-slate-100">Vediccare</span>
         </Link>
 
         {/* Nav links */}
@@ -70,6 +90,16 @@ export default function Navbar() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-2 shrink-0">
+          {deferredPrompt && (
+            <button
+              onClick={handleInstallClick}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-saffron-light/50 text-saffron border border-saffron/20 hover:bg-saffron hover:text-white transition-all dark:bg-amber-900/30 dark:border-saffron/30"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install App
+            </button>
+          )}
+
           {/* Notification Bell */}
           {user && <NotificationBell />}
 
