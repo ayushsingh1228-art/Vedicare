@@ -915,7 +915,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
         try:
             genai.configure(api_key=EMERGENT_LLM_KEY)
             model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
+                model_name="gemini-3.6-flash",
                 system_instruction=system_msg
             )
             
