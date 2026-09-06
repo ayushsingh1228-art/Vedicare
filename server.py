@@ -904,16 +904,33 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
     if user_dosha:
         system_msg += f"\n\nPATIENT DOSHA: The user's primary dosha is **{user_dosha.capitalize()}**. Tailor your advice to this constitution."
 
-    if LlmChat is None:
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        genai = None
+
+    if genai is None or not EMERGENT_LLM_KEY:
         reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
     else:
-        llm = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=session_id,
-            system_message=system_msg,
-        ).with_model("gemini", "gemini-2.0-flash")
         try:
-            reply = await llm.send_message(UserMessage(text=data.message))
+            genai.configure(api_key=EMERGENT_LLM_KEY)
+            model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                system_instruction=system_msg
+            )
+            
+            # Fetch chat history for context
+            history_docs = await db.chat_messages.find({"session_id": session_id}).sort("created_at", 1).to_list(10)
+            history = []
+            for doc in history_docs:
+                history.append({
+                    "role": "model" if doc["role"] == "assistant" else "user",
+                    "parts": [doc["content"]]
+                })
+                
+            chat = model.start_chat(history=history)
+            response = chat.send_message(data.message)
+            reply = response.text
         except Exception as e:
             logger.error(f"LLM error: {e}")
             reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
