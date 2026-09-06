@@ -904,33 +904,41 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
     if user_dosha:
         system_msg += f"\n\nPATIENT DOSHA: The user's primary dosha is **{user_dosha.capitalize()}**. Tailor your advice to this constitution."
 
-    try:
-        import google.generativeai as genai
-    except ImportError:
-        genai = None
-
-    if genai is None or not EMERGENT_LLM_KEY:
+    if not EMERGENT_LLM_KEY:
         reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
     else:
         try:
-            genai.configure(api_key=EMERGENT_LLM_KEY)
-            model = genai.GenerativeModel(
-                model_name="gemini-3.6-flash",
-                system_instruction=system_msg
-            )
-            
-            # Fetch chat history for context
-            history_docs = await db.chat_messages.find({"session_id": session_id}).sort("created_at", 1).to_list(10)
-            history = []
+            # Fetch last 6 messages for context (keep it lightweight)
+            history_docs = await db.chat_messages.find(
+                {"session_id": session_id}
+            ).sort("created_at", -1).to_list(6)
+            history_docs.reverse()
+
+            # Build Gemini REST API payload
+            contents = []
             for doc in history_docs:
-                history.append({
+                contents.append({
                     "role": "model" if doc["role"] == "assistant" else "user",
-                    "parts": [doc["content"]]
+                    "parts": [{"text": doc["content"]}]
                 })
-                
-            chat = model.start_chat(history=history)
-            response = chat.send_message(data.message)
-            reply = response.text
+            contents.append({"role": "user", "parts": [{"text": data.message}]})
+
+            payload = {
+                "system_instruction": {"parts": [{"text": system_msg}]},
+                "contents": contents,
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "maxOutputTokens": 600,
+                }
+            }
+
+            # Direct async REST call — much faster than gRPC library
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={EMERGENT_LLM_KEY}"
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                resp = await client.post(url, json=payload)
+                resp.raise_for_status()
+                rjson = resp.json()
+                reply = rjson["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e:
             logger.error(f"LLM error: {e}")
             reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
