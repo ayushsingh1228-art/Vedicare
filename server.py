@@ -928,7 +928,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
                 "contents": contents,
                 "generationConfig": {
                     "temperature": 0.7,
-                    "maxOutputTokens": 600,
+                    "maxOutputTokens": 2048,
                 }
             }
 
