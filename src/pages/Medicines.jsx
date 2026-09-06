@@ -3,13 +3,16 @@ import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Bell, Plus, Trash2, Mail, Check, Pill } from "lucide-react";
+import { Bell, Plus, Trash2, Mail, Check, Pill, ShoppingBag } from "lucide-react";
+import MedicineOrderModal from "@/components/MedicineOrderModal";
 
 export default function Medicines() {
   const [meds, setMeds] = useState([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", dosage: "", times: "08:00, 20:00", start_date: new Date().toISOString().slice(0, 10), end_date: "", notes: "" });
   const today = new Date().toISOString().slice(0, 10);
+  const [orderModal, setOrderModal] = useState(false);
+  const [orderMedName, setOrderMedName] = useState("");
 
   const load = () => api.get("/medicines").then((r) => setMeds(r.data));
   useEffect(() => { load(); }, []);
@@ -18,9 +21,7 @@ export default function Medicines() {
     e.preventDefault();
     const times = form.times.split(",").map((t) => t.trim()).filter(Boolean);
     if (times.length === 0) return toast.error("Add at least one time");
-    if (form.end_date && form.end_date < form.start_date) {
-      return toast.error("End date cannot be before start date");
-    }
+    if (form.end_date && form.end_date < form.start_date) return toast.error("End date cannot be before start date");
     try {
       await api.post("/medicines", { ...form, times, end_date: form.end_date || null });
       toast.success("Medicine added");
@@ -60,37 +61,40 @@ export default function Medicines() {
             <h1 className="font-serif text-5xl md:text-6xl leading-none text-ink mt-3">Medicine reminders</h1>
             <p className="text-ink/60 mt-2">Gentle nudges in-app and to your inbox.</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <button data-testid="med-add" className="saffron-btn rounded-full px-6 py-3 font-medium flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Add medicine
-              </button>
-            </DialogTrigger>
-            <DialogContent className="bg-white rounded-3xl border border-[#E8E1D5]">
-              <DialogHeader>
-                <DialogTitle className="font-serif text-3xl text-ink">Add medicine</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={create} className="space-y-4 mt-2">
-                <input data-testid="med-name" required placeholder="Name (e.g. Ashwagandha)" className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                <input data-testid="med-dosage" required placeholder="Dosage (e.g. 1 tablet after meals)" className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.dosage} onChange={(e) => setForm({ ...form, dosage: e.target.value })} />
-                <input data-testid="med-times" required placeholder="Times, comma separated (e.g. 08:00, 20:00)" className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.times} onChange={(e) => setForm({ ...form, times: e.target.value })} />
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs text-ink/60">Start</label>
-                    <input data-testid="med-start" type="date" required value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" />
+          <div className="flex gap-3">
+            <button onClick={() => { setOrderMedName(""); setOrderModal(true); }} className="flex items-center gap-2 bg-herb text-white rounded-full px-5 py-3 font-medium hover:bg-herb/90 transition">
+              <ShoppingBag className="w-4 h-4" /> Ayurvedic Store
+            </button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <button data-testid="med-add" className="saffron-btn rounded-full px-6 py-3 font-medium flex items-center gap-2">
+                  <Plus className="w-4 h-4" /> Add medicine
+                </button>
+              </DialogTrigger>
+              <DialogContent className="bg-white rounded-3xl border border-[#E8E1D5]">
+                <DialogHeader>
+                  <DialogTitle className="font-serif text-3xl text-ink">Add medicine</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={create} className="space-y-4 mt-2">
+                  <input data-testid="med-name" required placeholder="Name (e.g. Ashwagandha)" className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  <input data-testid="med-dosage" required placeholder="Dosage (e.g. 1 tablet after meals)" className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.dosage} onChange={(e) => setForm({ ...form, dosage: e.target.value })} />
+                  <input data-testid="med-times" required placeholder="Times, comma separated (e.g. 08:00, 20:00)" className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.times} onChange={(e) => setForm({ ...form, times: e.target.value })} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-ink/60">Start</label>
+                      <input data-testid="med-start" type="date" required value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full mt-1 px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-ink/60">End (optional)</label>
+                      <input data-testid="med-end" type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full mt-1 px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-ink/60">End (optional)</label>
-                    <input data-testid="med-end" type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                      className="w-full mt-1 px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" />
-                  </div>
-                </div>
-                <textarea data-testid="med-notes" placeholder="Notes (optional)" rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-                <button data-testid="med-save" type="submit" className="w-full saffron-btn rounded-full py-3 font-medium">Save</button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <textarea data-testid="med-notes" placeholder="Notes (optional)" rows={2} className="w-full px-4 py-3 rounded-xl border border-[#E8E1D5] bg-ivory focus:outline-none focus:border-saffron" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                  <button data-testid="med-save" type="submit" className="w-full saffron-btn rounded-full py-3 font-medium">Save</button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {meds.length === 0 ? (
@@ -114,7 +118,10 @@ export default function Medicines() {
                       <p className="text-ink/50 text-xs mt-1">From {m.start_date}{m.end_date && ` → ${m.end_date}`}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => { setOrderMedName(m.name); setOrderModal(true); }} className="rounded-full border border-herb/40 bg-herb-light/30 text-herb px-4 py-2 text-sm flex items-center gap-2 hover:bg-herb hover:text-white transition">
+                      <ShoppingBag className="w-4 h-4" /> Buy Online
+                    </button>
                     <button data-testid={`med-email-${m.id}`} onClick={() => sendEmail(m)} className="rounded-full border border-[#E8E1D5] px-4 py-2 text-sm flex items-center gap-2 hover:border-saffron transition">
                       <Mail className="w-4 h-4" /> Email me
                     </button>
@@ -128,7 +135,7 @@ export default function Medicines() {
                     const taken = isTaken(m, t);
                     return (
                       <button key={t} data-testid={`med-time-${m.id}-${t}`} onClick={() => !taken && markTaken(m, t)} disabled={taken}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition flex items-center gap-2 ${taken ? 'bg-herb-light text-herb line-through' : 'bg-saffron-light text-saffron hover:bg-saffron hover:text-ivory'}`}>
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition flex items-center gap-2 ${taken ? "bg-herb-light text-herb line-through" : "bg-saffron-light text-saffron hover:bg-saffron hover:text-ivory"}`}>
                         {taken && <Check className="w-3.5 h-3.5" />} {t}
                       </button>
                     );
@@ -140,6 +147,8 @@ export default function Medicines() {
           </div>
         )}
       </main>
+
+      <MedicineOrderModal open={orderModal} onClose={() => setOrderModal(false)} prefillName={orderMedName} />
     </div>
   );
 }

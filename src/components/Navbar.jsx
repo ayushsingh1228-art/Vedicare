@@ -4,7 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
-import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium, User, Download } from "lucide-react";
+import EmergencyRideModal from "@/components/EmergencyRideModal";
+import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium, User, Download, Siren } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -13,6 +14,7 @@ export default function Navbar() {
   const loc = useLocation();
   const nav = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [emergencyOpen, setEmergencyOpen] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -100,6 +102,17 @@ export default function Navbar() {
             </button>
           )}
 
+          {/* Emergency SOS */}
+          {user && user.role === "patient" && (
+            <button
+              onClick={() => setEmergencyOpen(true)}
+              className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-xs font-bold transition animate-pulse hover:animate-none shadow-md shadow-red-300"
+              title="Emergency — Book a ride to nearest doctor"
+            >
+              <Siren className="w-3.5 h-3.5" /> SOS
+            </button>
+          )}
+
           {/* Notification Bell */}
           {user && <NotificationBell />}
 
@@ -173,6 +186,8 @@ export default function Navbar() {
           );
         })}
       </div>
+
+      <EmergencyRideModal open={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
     </header>
   );
 }
