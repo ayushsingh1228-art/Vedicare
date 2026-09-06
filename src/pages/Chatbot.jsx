@@ -16,6 +16,7 @@ export default function Chatbot() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const endRef = useRef(null);
   const recognitionRef = useRef(null);
   const voiceTimerRef = useRef(null);
@@ -71,7 +72,15 @@ export default function Chatbot() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = /[\u0900-\u097f]/.test(text) ? "hi-IN" : "en-IN";
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
   };
 
   const send = async (text, speakReply = false) => {
@@ -243,6 +252,17 @@ export default function Chatbot() {
             >
               {listening ? <Square className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
+            {isSpeaking && (
+              <button
+                type="button"
+                onClick={stopSpeaking}
+                className="rounded-xl w-10 h-10 flex items-center justify-center bg-red-500 text-white hover:bg-red-600 transition-all animate-pulse"
+                aria-label="Stop AI speaking"
+                title="Stop AI from speaking"
+              >
+                <Square className="w-4 h-4" />
+              </button>
+            )}
             <button
               data-testid="chat-send"
               type="submit"
@@ -255,6 +275,11 @@ export default function Chatbot() {
           {listening && (
             <p className="absolute -bottom-6 left-0 right-0 text-center text-xs text-saffron font-medium animate-pulse">
               🎙 Listening… speak your question now
+            </p>
+          )}
+          {isSpeaking && !listening && (
+            <p className="absolute -bottom-6 left-0 right-0 text-center text-xs text-red-500 font-medium animate-pulse">
+              🔊 AI is speaking… tap the red button to stop
             </p>
           )}
         </div>
