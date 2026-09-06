@@ -1650,6 +1650,132 @@ async def root():
     return {"message": "Vediccare API is live"}
 
 
+@api_router.get("/seed-demo")
+async def seed_demo():
+    import uuid
+    from datetime import datetime, timezone, timedelta
+    
+    emails = ["demo@vediccare.app", "doctor@vediccare.app", "admin@vediccare.app"]
+    users = await db.users.find({"email": {"$in": emails}}).to_list(None)
+    user_ids = [u["id"] for u in users]
+    
+    await db.users.delete_many({"email": {"$in": emails}})
+    await db.records.delete_many({"user_id": {"$in": user_ids}})
+    await db.appointments.delete_many({"$or": [{"patient_id": {"$in": user_ids}}, {"doctor_id": {"$in": user_ids}}]})
+    await db.medicines.delete_many({"user_id": {"$in": user_ids}})
+    await db.wellness.delete_many({"user_id": {"$in": user_ids}})
+
+    patient_id = str(uuid.uuid4())
+    doctor_id = str(uuid.uuid4())
+    admin_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+    last_week = today - timedelta(days=7)
+
+    await db.users.insert_many([
+        {
+            "id": patient_id,
+            "email": "demo@vediccare.app",
+            "password": hash_password("password123"),
+            "name": "Aarav Sharma",
+            "role": "patient",
+            "created_at": now,
+            "dosha": {"vata": 30, "pitta": 85, "kapha": 40, "dominant": "pitta"}
+        },
+        {
+            "id": doctor_id,
+            "email": "doctor@vediccare.app",
+            "password": hash_password("password123"),
+            "name": "Dr. Aditi Desai",
+            "role": "doctor",
+            "specialization": "Ayurveda Specialist (Panchakarma)",
+            "is_verified": True,
+            "created_at": now
+        },
+        {
+            "id": admin_id,
+            "email": "admin@vediccare.app",
+            "password": hash_password("password123"),
+            "name": "Vediccare Admin",
+            "role": "admin",
+            "created_at": now
+        }
+    ])
+
+    await db.records.insert_many([
+        {
+            "id": str(uuid.uuid4()), "user_id": patient_id, "title": "Comprehensive Blood Count (CBC)",
+            "record_type": "lab_report", "date": last_week.isoformat(),
+            "notes": "Hemoglobin slightly low. Leukocytes normal. ESR within normal limits.",
+            "doctor_name": "Dr. Lal PathLabs", "image_url": "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=400",
+            "created_at": now
+        },
+        {
+            "id": str(uuid.uuid4()), "user_id": patient_id, "title": "Ayurvedic Consultation Prescription",
+            "record_type": "prescription", "date": yesterday.isoformat(),
+            "notes": "Patient complains of acid reflux and stress. Prescribed cooling herbs for Pitta pacification and Ashwagandha for stress.",
+            "doctor_name": "Dr. Aditi Desai", "image_url": None, "created_at": now
+        }
+    ])
+
+    await db.medicines.insert_many([
+        {
+            "id": str(uuid.uuid4()), "user_id": patient_id, "name": "Ashwagandha Tablets",
+            "dosage": "1 tablet after dinner", "times": ["20:30"],
+            "start_date": last_week.isoformat(), "end_date": None,
+            "notes": "For stress relief and better sleep",
+            "taken_log": [{"date": last_week.isoformat(), "time": "20:30"}, {"date": yesterday.isoformat(), "time": "20:30"}],
+            "created_at": now
+        },
+        {
+            "id": str(uuid.uuid4()), "user_id": patient_id, "name": "Triphala Churna",
+            "dosage": "1 tsp with warm water", "times": ["07:00", "21:00"],
+            "start_date": today.isoformat(), "end_date": None,
+            "notes": "Digestive detox",
+            "taken_log": [{"date": today.isoformat(), "time": "07:00"}],
+            "created_at": now
+        }
+    ])
+
+    await db.appointments.insert_many([
+        {
+            "id": str(uuid.uuid4()), "patient_id": patient_id, "patient_name": "Aarav Sharma",
+            "doctor_id": doctor_id, "doctor_name": "Dr. Aditi Desai",
+            "date": yesterday.isoformat(), "time": "10:00", "status": "completed",
+            "reason": "Digestive issues & burnout", "notes": "Recommended Pitta-pacifying diet.",
+            "meet_link": None, "created_at": now
+        },
+        {
+            "id": str(uuid.uuid4()), "patient_id": patient_id, "patient_name": "Aarav Sharma",
+            "doctor_id": doctor_id, "doctor_name": "Dr. Aditi Desai",
+            "date": (today + timedelta(days=3)).isoformat(), "time": "14:30", "status": "approved",
+            "reason": "Follow-up consultation", "notes": "",
+            "meet_link": "https://meet.google.com/abc-defg-hij", "created_at": now
+        }
+    ])
+
+    await db.wellness.insert_many([
+        {
+            "id": str(uuid.uuid4()), "user_id": patient_id, "date": yesterday.isoformat(),
+            "meals": [
+                {"type": "breakfast", "description": "Oatmeal with almonds", "time": "08:00"},
+                {"type": "lunch", "description": "Spicy curry and rice", "time": "13:30"}
+            ],
+            "water_ml": 2000, "yoga_minutes": 15, "meditation_minutes": 0,
+            "symptoms": ["Heartburn", "Fatigue"], "sleep_hours": 6.5
+        },
+        {
+            "id": str(uuid.uuid4()), "user_id": patient_id, "date": today.isoformat(),
+            "meals": [{"type": "breakfast", "description": "Fruit bowl (Apple, Papaya)", "time": "07:30"}],
+            "water_ml": 1000, "yoga_minutes": 30, "meditation_minutes": 10,
+            "symptoms": ["Mild headache"], "sleep_hours": 8.0
+        }
+    ])
+
+    return {"message": "Demo data successfully seeded for presentation!"}
+
+
 app.include_router(api_router)
 
 app.add_middleware(
