@@ -957,6 +957,12 @@ async def chat_history(user=Depends(get_current_user)):
     msgs = await db.chat_messages.find({"session_id": session_id}, {"_id": 0}).sort("created_at", 1).to_list(500)
     return msgs
 
+@api_router.delete("/chat/history")
+async def clear_chat_history(user=Depends(get_current_user)):
+    session_id = f"{user['id']}-default"
+    await db.chat_messages.delete_many({"session_id": session_id})
+    return {"status": "cleared"}
+
 
 # ------------------- Wellness Guidance -------------------
 class WellnessQueryIn(BaseModel):

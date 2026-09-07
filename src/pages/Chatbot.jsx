@@ -33,8 +33,11 @@ export default function Chatbot() {
     window.clearTimeout(voiceTimerRef.current);
   }, []);
 
-  const clearChat = () => {
+  const clearChat = async () => {
     setMessages([]);
+    try {
+      await api.delete("/chat/history");
+    } catch {}
     toast.success("Chat cleared");
   };
 
