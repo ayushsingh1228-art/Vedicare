@@ -39,7 +39,7 @@ const QUESTIONS = [
     ],
   },
   {
-    q: "What is your skin like?",
+    q: "What is your Skin Type?",
     options: [
       { text: "Dry, rough, or thin — gets chapped easily", dosha: "vata" },
       { text: "Oily, warm, prone to redness or acne", dosha: "pitta" },
@@ -47,35 +47,35 @@ const QUESTIONS = [
     ],
   },
   {
-    q: "How do you prefer the weather?",
+    q: "How is your Cold Tolerance?",
     options: [
-      { text: "Love warmth, dislike cold and wind", dosha: "vata" },
-      { text: "Prefer cool, dislike heat and humidity", dosha: "pitta" },
-      { text: "Enjoy warm and dry weather, dislike damp/cold", dosha: "kapha" },
+      { text: "Very low — I hate cold and wind, prefer warmth", dosha: "vata" },
+      { text: "High — I prefer cool weather, dislike heat", dosha: "pitta" },
+      { text: "Moderate — I dislike damp/cold weather the most", dosha: "kapha" },
     ],
   },
   {
-    q: "How is your energy throughout the day?",
+    q: "How would you describe your Voice?",
     options: [
-      { text: "Variable — bursts of energy followed by fatigue", dosha: "vata" },
-      { text: "Moderate and focused, goal-driven", dosha: "pitta" },
-      { text: "Steady and consistent, but slow to start", dosha: "kapha" },
+      { text: "Fast, talkative, sometimes cracks or is weak", dosha: "vata" },
+      { text: "Loud, clear, sharp, and commanding", dosha: "pitta" },
+      { text: "Deep, soft, slow, and melodic", dosha: "kapha" },
     ],
   },
   {
-    q: "How would you describe your memory?",
+    q: "How is your Memory Recall and Retention?",
     options: [
-      { text: "Quick to learn, quick to forget", dosha: "vata" },
-      { text: "Sharp memory, detail-oriented", dosha: "pitta" },
-      { text: "Slow to learn, but retains well long-term", dosha: "kapha" },
+      { text: "Quick to learn, but quick to forget", dosha: "vata" },
+      { text: "Sharp memory, excellent detail retention", dosha: "pitta" },
+      { text: "Slow to learn, but never forgets once learned", dosha: "kapha" },
     ],
   },
   {
-    q: "How is your appetite?",
+    q: "How is your Walking Speed?",
     options: [
-      { text: "Irregular — sometimes hungry, sometimes not", dosha: "vata" },
-      { text: "Strong and consistent, irritable when hungry", dosha: "pitta" },
-      { text: "Can go long without eating, emotional eating", dosha: "kapha" },
+      { text: "Fast, hurried, always in a rush", dosha: "vata" },
+      { text: "Steady, purposeful, and determined", dosha: "pitta" },
+      { text: "Slow, relaxed, and leisurely", dosha: "kapha" },
     ],
   },
   {
@@ -280,6 +280,9 @@ export default function DoshaQuiz() {
             <span className="text-sm font-medium text-herb">Dosha Assessment</span>
           </div>
           <h1 className="font-serif text-3xl text-ink">Discover Your Ayurvedic Type</h1>
+          <div className="text-xs text-ink/50 italic mt-3 max-w-sm mx-auto">
+            * Assessment parameters based on IEEE Access (2020) Ayurvedic Constituent Research.
+          </div>
         </div>
 
         {/* Progress */}
