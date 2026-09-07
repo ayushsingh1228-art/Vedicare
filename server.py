@@ -939,11 +939,14 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
             
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.post(url, headers=headers, json=payload)
+                if resp.status_code != 200:
+                    logger.error(f"Groq API error {resp.status_code}: {resp.text}")
                 resp.raise_for_status()
                 rjson = resp.json()
                 reply = rjson["choices"][0]["message"]["content"]
+                logger.info(f"Groq reply OK, length={len(reply)}")
         except Exception as e:
-            logger.error(f"LLM error: {e}")
+            logger.error(f"LLM error (will use fallback): {type(e).__name__}: {e}")
             reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
 
     now = datetime.now(timezone.utc).isoformat()
