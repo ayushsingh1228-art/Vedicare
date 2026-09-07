@@ -925,7 +925,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
             messages.append({"role": "user", "content": data.message})
 
             payload = {
-                "model": "llama-3.1-8b-instant",
+                "model": "llama3-8b-8192",
                 "messages": messages,
                 "temperature": 0.6,
                 "max_tokens": 1024
