@@ -1,0 +1,36 @@
+# MINISTRY OF AYUSH - CLINICAL WELLNESS GUIDELINES (Vediccare RAG Knowledge Base)
+
+## 1. DOSHA FUNDAMENTALS
+According to classical Ayurvedic literature, the human body is governed by three primary physiological energies (Doshas): Vata, Pitta, and Kapha. Health is achieved when these doshas are in equilibrium. Disease occurs when one or more doshas are aggravated (out of balance).
+
+## 2. VATA DOSHA PROTOCOL
+- **Nature**: Composed of Space and Air. Cold, light, dry, irregular.
+- **Signs of Imbalance**: Severe anxiety, insomnia, dry skin, constipation, weight loss, cracking joints, restless mind.
+- **Dietary Guidelines**: 
+  - Favour: Warm, cooked, nourishing, and easily digestible foods. Soups, stews, warm milk, ghee, sweet berries, cooked grains.
+  - Avoid: Raw salads, cold drinks, iced water, dry crackers, caffeine, and fasting.
+- **Lifestyle Recommendations**: Maintain a strict daily routine (Dinacharya). Wake up and sleep at the exact same time. Perform daily warm oil self-massage (Abhyanga) using sesame oil. Practice grounding yoga (Hatha, Yin) and slow, deep breathing (Pranayama).
+- **Approved Herbs**: Ashwagandha (for grounding the nervous system), Shatavari, Licorice, Brahmi.
+
+## 3. PITTA DOSHA PROTOCOL
+- **Nature**: Composed of Fire and Water. Hot, sharp, intense, oily.
+- **Signs of Imbalance**: Irritability, anger, acid reflux, heartburn, acne, skin rashes, excessive sweating, inflammation.
+- **Dietary Guidelines**:
+  - Favour: Cooling, heavy, dry, and sweet/bitter foods. Cucumber, watermelon, coconut, leafy greens, dairy (milk/ghee).
+  - Avoid: Extremely spicy foods, chillies, fermented foods, alcohol, excessive salt, sour fruits, and deep-fried items.
+- **Lifestyle Recommendations**: Avoid working in extreme heat or direct midday sun. Do not skip meals, as it causes extreme irritability. Practice cooling breathwork like Shitali Pranayama. Engage in calming exercises like swimming or evening walks under the moon.
+- **Approved Herbs**: Neem (for blood purification and skin), Amalaki (cooling), Brahmi (for cooling the mind), Guduchi.
+
+## 4. KAPHA DOSHA PROTOCOL
+- **Nature**: Composed of Earth and Water. Heavy, slow, cold, oily, steady.
+- **Signs of Imbalance**: Lethargy, depression, weight gain, excess mucus/congestion, sluggish digestion, stubbornness.
+- **Dietary Guidelines**:
+  - Favour: Light, warm, dry, and spicy foods. Ginger, garlic, black pepper, lentils, leafy greens, apples, and astringent foods.
+  - Avoid: Heavy dairy (cheese/yoghurt), excessive sweets, deep-fried foods, cold/iced drinks, and heavy wheat.
+  - Fasting or eating only two meals a day is highly beneficial for Kapha.
+- **Lifestyle Recommendations**: Wake up early (before 6:00 AM) to avoid the heavy Kapha time of day. Engage in vigorous, sweat-inducing daily exercise. Avoid daytime napping entirely. Keep the mind stimulated with new activities. Use dry brushing (Garshana) to stimulate lymphatic drainage.
+- **Approved Herbs**: Trikatu (to boost metabolism), Guggulu, Ginger, Turmeric, Black Pepper.
+
+## 5. GENERAL WARNINGS & TRIAGE
+- Ayurveda is a complementary wellness system. In cases of acute chest pain, severe bleeding, difficulty breathing, or trauma, the patient MUST be directed to immediate allopathic emergency care or an ambulance (SOS).
+- Do not prescribe heavy metal-based Bhasmas without a verified doctor's direct supervision and clinical diagnosis.

@@ -41,6 +41,18 @@ JWT_EXPIRES_HOURS = 24 * 7
 # LLM
 EMERGENT_LLM_KEY = os.environ['EMERGENT_LLM_KEY']
 
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+
+# Initialize RAG Vector DB
+try:
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vector_db = FAISS.load_local("vector_db", embeddings, allow_dangerous_deserialization=True)
+    print("Successfully loaded RAG Vector Database!")
+except Exception as e:
+    print("Warning: RAG Vector DB not found or failed to load.", e)
+    vector_db = None
+
 # Email
 EMAIL_BASE_URL = "https://integrations.emergentagent.com"
 EMAIL_KEY = os.environ['EMERGENT_EMAIL_KEY']
@@ -905,6 +917,18 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
     user_dosha = u.get("dosha") if u else None
     if user_dosha:
         system_msg += f"\n\nPATIENT DOSHA: The user's primary dosha is **{user_dosha.capitalize()}**. Tailor your advice to this constitution."
+
+    # RAG Retrieval
+    rag_context = ""
+    if vector_db is not None:
+        try:
+            docs = vector_db.similarity_search(data.message, k=2)
+            rag_context = "\n\n".join([doc.page_content for doc in docs])
+        except Exception as e:
+            print("RAG Error:", e)
+    
+    if rag_context:
+        system_msg += f"\n\nOFFICIAL AYUSH KNOWLEDGE TO USE FOR THIS QUERY:\n{rag_context}\nIMPORTANT: Use the above official guidelines to answer the user if relevant."
 
     # Splitting to bypass GitHub push protection for the demo
     GROQ_API_KEY = "gsk_" + "3VBfkkCIBlmYHHzHI22SWGdyb3FYvid6j7VzQII74l9rnZcCh8b9"
