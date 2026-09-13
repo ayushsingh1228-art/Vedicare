@@ -879,6 +879,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
         "For serious illness, always say: consult a qualified doctor. "
         "For minor issues, suggest gentle Ayurvedic remedies and add: consult a doctor if symptoms persist. "
         "Fees: consultation ₹200-800, lab ₹100-2000, Panchakarma ₹1500-5000. "
+        "Never use markdown tables or HTML tags (like <br>). Use clean bullet points instead. "
         "Be warm, practical, and culturally respectful. Respond in the user's language (English or Hindi)."
     )
     

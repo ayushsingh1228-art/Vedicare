@@ -338,3 +338,14 @@ textarea:focus-visible, select:focus-visible {
 }
 .animate-accordion-down { animation: accordion-down 0.2s ease-out; }
 .animate-accordion-up   { animation: accordion-up   0.2s ease-out; }
+
+/* Markdown Styles for Chatbot */
+.markdown-body ul { list-style-type: disc; margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.markdown-body ol { list-style-type: decimal; margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+.markdown-body li { margin-bottom: 0.25rem; }
+.markdown-body table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem; }
+.markdown-body th, .markdown-body td { border: 1px solid #E8E1D5; padding: 0.5rem; text-align: left; }
+.markdown-body th { background-color: #F3EFE6; font-weight: 600; }
+.markdown-body p { margin-bottom: 0.5rem; }
+.markdown-body p:last-child { margin-bottom: 0; }
+.markdown-body strong { font-weight: 600; color: #C85A17; }

@@ -3,6 +3,8 @@ import Navbar from "@/components/Navbar";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Send, Loader2, Sparkles, Leaf, Mic, Volume2, Square, Receipt, Bot, User, Trash2 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const suggestions = [
   { text: "What is my dosha likely to be?", icon: Leaf, color: "text-herb bg-[#E5F0E2]" },
@@ -182,13 +184,19 @@ export default function Chatbot() {
 
                 <div
                   data-testid={`msg-${m.role}`}
-                  className={`max-w-[78%] px-5 py-3.5 rounded-2xl whitespace-pre-wrap text-sm leading-relaxed relative group
+                  className={`max-w-[78%] px-5 py-3.5 rounded-2xl text-sm leading-relaxed relative group overflow-hidden
                     ${m.role === 'user'
-                      ? 'bubble-user bg-gradient-to-br from-saffron to-orange-500 text-white rounded-br-sm shadow-lg shadow-saffron/20'
-                      : 'bubble-ai bg-white border border-[#E8E1D5] text-ink rounded-bl-sm shadow-sm'
+                      ? 'bubble-user bg-gradient-to-br from-saffron to-orange-500 text-white rounded-br-sm shadow-lg shadow-saffron/20 whitespace-pre-wrap'
+                      : 'bubble-ai bg-white border border-[#E8E1D5] text-ink rounded-bl-sm shadow-sm markdown-body'
                     }`}
                 >
-                  {m.content}
+                  {m.role === 'user' ? (
+                    m.content
+                  ) : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {m.content}
+                    </ReactMarkdown>
+                  )}
                   {m.role === 'assistant' && (
                     <button
                       type="button"
