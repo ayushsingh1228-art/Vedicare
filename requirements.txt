@@ -7,3 +7,10 @@ PyJWT>=2.9.0
 bcrypt>=4.2.0
 email-validator>=2.2.0
 google-generativeai>=0.4.1
+langchain
+langchain-community
+langchain-huggingface
+langchain-text-splitters
+sentence-transformers
+faiss-cpu
+pypdf
