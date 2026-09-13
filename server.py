@@ -918,17 +918,22 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
     if user_dosha:
         system_msg += f"\n\nPATIENT DOSHA: The user's primary dosha is **{user_dosha.capitalize()}**. Tailor your advice to this constitution."
 
-    # RAG Retrieval
+    # RAG Retrieval — keep context small to avoid Groq 413 payload errors
     rag_context = ""
     if vector_db is not None:
         try:
-            docs = vector_db.similarity_search(data.message, k=2)
-            rag_context = "\n\n".join([doc.page_content for doc in docs])
+            docs = vector_db.similarity_search(data.message, k=1)
+            if docs:
+                # Trim to max 600 chars so we don't blow Groq's payload limit
+                rag_context = docs[0].page_content[:600]
         except Exception as e:
             print("RAG Error:", e)
-    
+
     if rag_context:
-        system_msg += f"\n\nOFFICIAL AYUSH KNOWLEDGE TO USE FOR THIS QUERY:\n{rag_context}\nIMPORTANT: Use the above official guidelines to answer the user if relevant."
+        system_msg += f"\n\nOFFICIAL AYUSH KNOWLEDGE:\n{rag_context}"
+
+    # Hard-cap the system message at 4000 chars to guarantee we never hit the 413 limit
+    system_msg = system_msg[:4000]
 
     # Splitting to bypass GitHub push protection for the demo
     GROQ_API_KEY = "gsk_" + "3VBfkkCIBlmYHHzHI22SWGdyb3FYvid6j7VzQII74l9rnZcCh8b9"
@@ -936,17 +941,17 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
         reply = fallback_chat_reply(data.message, user["name"].split(" ")[0], user_dosha)
     else:
         try:
-            # Fetch last 6 messages for context
+            # Fetch last 3 messages for context (was 6 — reduced to keep payload small)
             history_docs = await db.chat_messages.find(
                 {"session_id": session_id}
-            ).sort("created_at", -1).to_list(6)
+            ).sort("created_at", -1).to_list(3)
             history_docs.reverse()
 
             messages = [{"role": "system", "content": system_msg}]
             for doc in history_docs:
                 messages.append({
                     "role": "assistant" if doc["role"] == "assistant" else "user",
-                    "content": doc["content"]
+                    "content": doc["content"][:500]  # trim history messages too
                 })
             messages.append({"role": "user", "content": data.message})
 
@@ -954,7 +959,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
                 "model": "openai/gpt-oss-20b",
                 "messages": messages,
                 "temperature": 0.6,
-                "max_tokens": 1024
+                "max_tokens": 800
             }
             
             url = "https://api.groq.com/openai/v1/chat/completions"
