@@ -41,16 +41,28 @@ JWT_EXPIRES_HOURS = 24 * 7
 # LLM
 EMERGENT_LLM_KEY = os.environ['EMERGENT_LLM_KEY']
 
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
-# Initialize RAG Vector DB
+# Initialize RAG Vector Database Initialization
+vector_db = None
+is_local_fallback = False
 try:
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    vector_db = FAISS.load_local("vector_db", embeddings, allow_dangerous_deserialization=True)
-    print("Successfully loaded RAG Vector Database!")
+    # OPTION 1 (CLOUD-NATIVE): Try HF Inference API (Requires 0MB RAM, perfect for Render)
+    hf_token = os.environ.get("HF_TOKEN")
+    if hf_token:
+        from langchain_huggingface import HuggingFaceEndpointEmbeddings
+        hf_embeddings = HuggingFaceEndpointEmbeddings(model="sentence-transformers/all-MiniLM-L6-v2", huggingfacehub_api_token=hf_token)
+        vector_db = FAISS.load_local("vector_db", hf_embeddings, allow_dangerous_deserialization=True)
+        print("✅ Hybrid Cloud Architecture Active: Loaded lightweight HuggingFace API Vector DB.")
+    else:
+        # OPTION 2 (EDGE AI): Fallback to heavy PyTorch model if no HF token is found (Perfect for Localhost)
+        from langchain_huggingface import HuggingFaceEmbeddings
+        local_embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        vector_db = FAISS.load_local("vector_db", local_embeddings, allow_dangerous_deserialization=True)
+        is_local_fallback = True
+        print("⚠️ Local Edge AI Fallback Active: Loaded Heavy PyTorch Vector DB.")
 except Exception as e:
-    print("Warning: RAG Vector DB not found or failed to load.", e)
+    print(f"Warning: Vector DB failed to load: {e}")
     vector_db = None
 
 # Email
