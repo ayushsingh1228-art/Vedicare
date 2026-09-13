@@ -951,7 +951,7 @@ async def chat(data: ChatMessageIn, user=Depends(get_current_user)):
             messages.append({"role": "user", "content": data.message})
 
             payload = {
-                "model": "groq/compound-mini",
+                "model": "openai/gpt-oss-20b",
                 "messages": messages,
                 "temperature": 0.6,
                 "max_tokens": 1024
