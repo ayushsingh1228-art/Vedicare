@@ -5,7 +5,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
 import NotificationBell from "@/components/NotificationBell";
 import EmergencyRideModal from "@/components/EmergencyRideModal";
-import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, MoonStar, SunMedium, Download, Siren } from "lucide-react";
+import { Leaf, LogOut, Languages, MessagesSquare, CalendarCheck, FileHeart, Sparkles, LayoutDashboard, Stethoscope, ShieldCheck, Bell, Download, Siren } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -100,11 +100,6 @@ export default function Navbar() {
 
             {user && <NotificationBell />}
 
-            <button type="button" onClick={toggleTheme} aria-label="Toggle dark mode"
-              className="hidden sm:flex h-10 w-10 items-center justify-center rounded-xl border border-[#E8E1D5] bg-white/80 dark:bg-slate-800/90 dark:border-slate-700 dark:text-slate-200 text-ink/70 transition hover:border-saffron hover:text-saffron"
-            >
-              {isDark ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
-            </button>
 
             <button type="button" onClick={toggleLanguage} aria-pressed={isHindi}
               className={`hidden sm:flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${

@@ -1,23 +1,21 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
 
 const ThemeContext = createContext(null);
 
+// Dark mode disabled — UI breaks in dark mode, removing it for now.
+// Always returns light. No-op toggle so Navbar doesn't crash.
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => localStorage.getItem("vediccare_theme") || "light");
-
-  useEffect(() => {
-    const isDark = theme === "dark";
-    document.documentElement.classList.toggle("dark", isDark);
-    document.documentElement.dataset.theme = theme;
-    localStorage.setItem("vediccare_theme", theme);
-  }, [theme]);
-
   const value = useMemo(() => ({
-    theme,
-    isDark: theme === "dark",
-    toggleTheme: () => setTheme((current) => (current === "dark" ? "light" : "dark")),
-    setTheme,
-  }), [theme]);
+    theme: "light",
+    isDark: false,
+    toggleTheme: () => {},
+    setTheme: () => {},
+  }), []);
+
+  // Force light on mount (in case browser localStorage had "dark" saved)
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.remove("dark");
+  }
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
