@@ -1,6 +1,7 @@
 import "@/index.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -30,32 +31,34 @@ function Protected({ children, doctor, admin }) {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <Toaster position="top-right" richColors />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
-              <Route path="/chatbot" element={<Protected><Chatbot /></Protected>} />
-              <Route path="/appointments" element={<Protected><Appointments /></Protected>} />
-              <Route path="/records" element={<Protected><Records /></Protected>} />
-              <Route path="/wellness" element={<Protected><Wellness /></Protected>} />
-              <Route path="/medicines" element={<Protected><Medicines /></Protected>} />
-              <Route path="/profile" element={<Protected><Profile /></Protected>} />
-              <Route path="/dosha-quiz" element={<Protected><DoshaQuiz /></Protected>} />
-              <Route path="/doctor" element={<Protected doctor><DoctorDashboard /></Protected>} />
-              <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId="178934671538-pg8et8m72l15qu577t9e3tvghhcjuivf.apps.googleusercontent.com">
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <Toaster position="top-right" richColors />
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+                <Route path="/chatbot" element={<Protected><Chatbot /></Protected>} />
+                <Route path="/appointments" element={<Protected><Appointments /></Protected>} />
+                <Route path="/records" element={<Protected><Records /></Protected>} />
+                <Route path="/wellness" element={<Protected><Wellness /></Protected>} />
+                <Route path="/medicines" element={<Protected><Medicines /></Protected>} />
+                <Route path="/profile" element={<Protected><Profile /></Protected>} />
+                <Route path="/dosha-quiz" element={<Protected><DoshaQuiz /></Protected>} />
+                <Route path="/doctor" element={<Protected doctor><DoctorDashboard /></Protected>} />
+                <Route path="/admin" element={<Protected admin><AdminDashboard /></Protected>} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   );
 }
 

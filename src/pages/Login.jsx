@@ -3,9 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { Leaf, Loader2 } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function Login() {
-  const { login, loginDemo } = useAuth();
+  const { login, loginDemo, googleLogin } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,6 +36,18 @@ export default function Login() {
     finally { setLoading(false); }
   };
 
+  const handleGoogle = async (credentialResponse) => {
+    try {
+      const u = await googleLogin(credentialResponse.credential);
+      toast.success(`Welcome, ${u.name}! 🌿`);
+      if (u.role === "admin") nav("/admin");
+      else if (u.role === "doctor") nav("/doctor");
+      else nav("/dashboard");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Google sign-in failed");
+    }
+  };
+
   return (
     <div className="min-h-screen motif-bg flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -49,7 +62,24 @@ export default function Login() {
           <h1 className="font-serif text-4xl text-ink">Welcome back.</h1>
           <p className="text-ink/60 mt-2">Continue your wellness ritual.</p>
 
-          <form onSubmit={submit} className="mt-8 space-y-4">
+          {/* Google Sign-In */}
+          <div className="mt-7 flex flex-col items-center gap-3">
+            <GoogleLogin
+              onSuccess={handleGoogle}
+              onError={() => toast.error("Google sign-in failed. Try again.")}
+              shape="pill"
+              size="large"
+              width="100%"
+              text="signin_with"
+              theme="outline"
+            />
+          </div>
+
+          <div className="my-6 flex items-center gap-3 text-xs text-ink/50">
+            <div className="leaf-divider flex-1" /> or sign in with email <div className="leaf-divider flex-1" />
+          </div>
+
+          <form onSubmit={submit} className="space-y-4">
             <div>
               <label className="text-sm text-ink/70 font-medium">Email</label>
               <input

@@ -3,9 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { Leaf, Loader2 } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const nav = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "patient", specialization: "" });
   const [loading, setLoading] = useState(false);
@@ -23,6 +24,16 @@ export default function Register() {
     } finally { setLoading(false); }
   };
 
+  const handleGoogle = async (credentialResponse) => {
+    try {
+      const u = await googleLogin(credentialResponse.credential);
+      toast.success(`Welcome to Vediccare, ${u.name}! 🌿`);
+      nav("/dashboard");
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || "Google sign-in failed");
+    }
+  };
+
   return (
     <div className="min-h-screen motif-bg flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -37,7 +48,24 @@ export default function Register() {
           <h1 className="font-serif text-4xl text-ink">Create your account.</h1>
           <p className="text-ink/60 mt-2">A gentle start to lifelong wellness.</p>
 
-          <div className="mt-6 grid grid-cols-2 gap-2 p-1 bg-cream rounded-full">
+          {/* Google Sign-Up */}
+          <div className="mt-6 flex flex-col items-center">
+            <GoogleLogin
+              onSuccess={handleGoogle}
+              onError={() => toast.error("Google sign-in failed. Try again.")}
+              shape="pill"
+              size="large"
+              width="100%"
+              text="signup_with"
+              theme="outline"
+            />
+          </div>
+
+          <div className="my-5 flex items-center gap-3 text-xs text-ink/50">
+            <div className="leaf-divider flex-1" /> or register with email <div className="leaf-divider flex-1" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 p-1 bg-cream rounded-full">
             {["patient", "doctor"].map((r) => (
               <button key={r} data-testid={`register-role-${r}`} onClick={() => setForm({ ...form, role: r })}
                 className={`py-2 rounded-full text-sm font-medium transition ${form.role === r ? 'bg-saffron text-ivory' : 'text-ink/70'}`}>

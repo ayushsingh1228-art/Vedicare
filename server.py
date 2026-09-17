@@ -436,6 +436,102 @@ async def login(data: UserLogin):
 
 
 
+@api_router.post("/auth/google")
+async def google_auth(body: dict):
+    """Verify a Google ID token and log in or auto-create a patient account."""
+    credential = body.get("credential", "")
+    if not credential:
+        raise HTTPException(status_code=400, detail="Missing Google credential")
+
+    # Verify token with Google's tokeninfo endpoint (no SDK needed)
+    async with httpx.AsyncClient(timeout=10) as c:
+        resp = await c.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}")
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+
+    info = resp.json()
+    email = info.get("email", "").lower()
+    name = info.get("name") or info.get("email", "Google User")
+    google_verified = info.get("email_verified") == "true"
+
+    if not email or not google_verified:
+        raise HTTPException(status_code=401, detail="Google could not verify your email")
+
+    # Check if user already exists
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        # Existing user — just log them in
+        login_count = int(existing.get("login_count", 0)) + 1
+        await db.users.update_one(
+            {"id": existing["id"]},
+            {"$set": {"login_count": login_count, "last_login_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        token = create_token(existing["id"], existing["role"])
+        return {
+            "token": token,
+            "user": {
+                "id": existing["id"], "name": existing["name"], "email": existing["email"],
+                "role": existing["role"], "specialization": existing.get("specialization"),
+                "is_verified": True, "login_count": login_count
+            }
+        }
+
+    # New user — auto-create as patient
+    user_id = str(uuid.uuid4())
+    doc = {
+        "id": user_id,
+        "name": name,
+        "email": email,
+        "password": hash_password(str(uuid.uuid4())),  # random password, login via Google only
+        "role": "patient",
+        "specialization": None,
+        "is_verified": True,
+        "auth_provider": "google",
+        "login_count": 1,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(doc)
+
+    # Send welcome email
+    try:
+        await send_email(
+            to=email,
+            subject="Welcome to Vediccare — Your Ayurvedic Health Journey Begins 🌿",
+            html=f"""
+            <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#FAF9F6;border:1px solid #E8E1D5;border-radius:16px;overflow:hidden">
+              <div style="background:linear-gradient(135deg,#C85A17,#e07040);padding:28px 32px;text-align:center">
+                <h1 style="color:#fff;margin:0;font-size:26px;font-weight:700">🌿 Vediccare</h1>
+                <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Ayurvedic Healthcare Platform</p>
+              </div>
+              <div style="padding:32px">
+                <h2 style="color:#2C2C2C;font-size:20px;margin:0 0 8px">Namaste, {name}! 🙏</h2>
+                <p style="color:#5C5C5C;line-height:1.6;margin:0 0 16px">
+                  You signed up using <strong>Google</strong>. Your Vediccare account is ready!
+                  Access personalised Ayurvedic consultations, health records, and our AI wellness assistant.
+                </p>
+                <div style="background:#fff;border:1px solid #E8E1D5;border-radius:12px;padding:16px;margin:20px 0">
+                  <p style="margin:0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Your registered email</p>
+                  <p style="margin:4px 0 0;color:#C85A17;font-weight:600;font-size:15px">{email}</p>
+                </div>
+                <p style="color:#888;font-size:12px;margin:20px 0 0;border-top:1px solid #E8E1D5;padding-top:16px">
+                  <strong>Vediccare</strong> — Powered by Ministry of AYUSH guidelines &amp; AI
+                </p>
+              </div>
+            </div>"""
+        )
+    except Exception:
+        pass
+
+    token = create_token(user_id, "patient")
+    return {
+        "token": token,
+        "user": {
+            "id": user_id, "name": name, "email": email,
+            "role": "patient", "specialization": None, "is_verified": True, "login_count": 1
+        }
+    }
+
+
 @api_router.post("/auth/demo")
 async def demo_login():
     """Return a token for the pre-seeded demo patient."""

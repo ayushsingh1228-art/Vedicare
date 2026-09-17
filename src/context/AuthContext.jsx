@@ -37,13 +37,23 @@ export function AuthProvider({ children }) {
     return r.data.user;
   };
 
+  // Google OAuth Sign-In
+  const googleLogin = async (googleCredential) => {
+    const r = await api.post("/auth/google", { credential: googleCredential });
+    localStorage.setItem("vediccare_token", r.data.token);
+    localStorage.setItem("vediccare_user", JSON.stringify(r.data.user));
+    setUser(r.data.user);
+    return r.data.user;
+  };
+
   const logout = () => {
     localStorage.removeItem("vediccare_token");
+    localStorage.removeItem("vediccare_user");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, loginDemo, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, loginDemo, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
