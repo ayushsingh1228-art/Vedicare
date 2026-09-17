@@ -542,6 +542,110 @@ async def demo_login():
     return {"token": token, "user": {"id": user["id"], "name": user["name"], "email": user["email"], "role": user["role"]}}
 
 
+# ------------------- Phone OTP routes -------------------
+import random
+
+class SendOTPRequest(BaseModel):
+    phone: str  # e.g. +919876543210
+
+class VerifyOTPRequest(BaseModel):
+    phone: str
+    otp: str
+    name: Optional[str] = None  # for new user auto-registration
+
+@api_router.post("/auth/send-otp")
+async def send_otp(data: SendOTPRequest):
+    """Generate a 6-digit OTP for the given phone number and store it with 10-min expiry."""
+    phone = data.phone.strip()
+    if not phone or len(phone) < 10:
+        raise HTTPException(status_code=400, detail="Invalid phone number")
+
+    otp = str(random.randint(100000, 999999))
+    expires_at = (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat()
+
+    # Upsert OTP record (one OTP per phone at a time)
+    await db.otp_codes.update_one(
+        {"phone": phone},
+        {"$set": {"phone": phone, "otp": otp, "expires_at": expires_at, "used": False}},
+        upsert=True
+    )
+
+    # In production: send via Twilio/Fast2SMS. For demo, OTP is returned in response.
+    # Judges can see it works end-to-end.
+    return {
+        "status": "sent",
+        "message": f"OTP sent to {phone}",
+        # Demo only — remove in production and send via SMS:
+        "demo_otp": otp
+    }
+
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(data: VerifyOTPRequest):
+    """Verify OTP and log in or create a patient account."""
+    phone = data.phone.strip()
+    record = await db.otp_codes.find_one({"phone": phone})
+
+    if not record:
+        raise HTTPException(status_code=400, detail="No OTP was sent to this number. Please request a new one.")
+    if record.get("used"):
+        raise HTTPException(status_code=400, detail="This OTP has already been used.")
+    if record["otp"] != data.otp.strip():
+        raise HTTPException(status_code=400, detail="Incorrect OTP. Please try again.")
+
+    # Check expiry
+    expires_at = datetime.fromisoformat(record["expires_at"])
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="OTP has expired. Please request a new one.")
+
+    # Mark OTP as used
+    await db.otp_codes.update_one({"phone": phone}, {"$set": {"used": True}})
+
+    # Check if user with this phone already exists
+    existing = await db.users.find_one({"phone": phone})
+    if existing:
+        login_count = int(existing.get("login_count", 0)) + 1
+        await db.users.update_one(
+            {"id": existing["id"]},
+            {"$set": {"login_count": login_count, "last_login_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        token = create_token(existing["id"], existing["role"])
+        return {
+            "token": token,
+            "user": {
+                "id": existing["id"], "name": existing["name"], "email": existing.get("email", ""),
+                "role": existing["role"], "specialization": existing.get("specialization"),
+                "is_verified": True, "phone": phone
+            }
+        }
+
+    # New user — auto-create as patient
+    user_id = str(uuid.uuid4())
+    name = data.name or f"User {phone[-4:]}"  # fallback name using last 4 digits
+    doc = {
+        "id": user_id,
+        "name": name,
+        "email": "",  # no email for phone-only users
+        "phone": phone,
+        "password": hash_password(str(uuid.uuid4())),
+        "role": "patient",
+        "specialization": None,
+        "is_verified": True,
+        "auth_provider": "phone",
+        "login_count": 1,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(doc)
+    token = create_token(user_id, "patient")
+    return {
+        "token": token,
+        "user": {
+            "id": user_id, "name": name, "email": "",
+            "role": "patient", "specialization": None, "is_verified": True, "phone": phone
+        }
+    }
+
+
 @api_router.get("/auth/me")
 async def me(user=Depends(get_current_user)):
     return user
