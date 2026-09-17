@@ -46,21 +46,6 @@ export function AuthProvider({ children }) {
     return r.data.user;
   };
 
-  // Phone OTP — Step 1: request OTP
-  const sendOtp = async (phone) => {
-    const r = await api.post("/auth/send-otp", { phone });
-    return r.data; // includes demo_otp for hackathon demo
-  };
-
-  // Phone OTP — Step 2: verify OTP and log in
-  const phoneLogin = async (phone, otp, name) => {
-    const r = await api.post("/auth/verify-otp", { phone, otp, name });
-    localStorage.setItem("vediccare_token", r.data.token);
-    localStorage.setItem("vediccare_user", JSON.stringify(r.data.user));
-    setUser(r.data.user);
-    return r.data.user;
-  };
-
   const logout = () => {
     localStorage.removeItem("vediccare_token");
     localStorage.removeItem("vediccare_user");
@@ -68,7 +53,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, loginDemo, googleLogin, sendOtp, phoneLogin, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, loginDemo, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );
