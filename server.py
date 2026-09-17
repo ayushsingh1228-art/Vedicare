@@ -462,10 +462,50 @@ async def google_auth(body: dict):
     if existing:
         # Existing user — just log them in
         login_count = int(existing.get("login_count", 0)) + 1
+        now_utc = datetime.now(timezone.utc)
         await db.users.update_one(
             {"id": existing["id"]},
-            {"$set": {"login_count": login_count, "last_login_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {"login_count": login_count, "last_login_at": now_utc.isoformat()}}
         )
+
+        # Send login alert email
+        _DEMO_EMAILS = {"demo@vediccare.app", "doctor@vediccare.app", "admin@vediccare.app"}
+        if existing["email"] not in _DEMO_EMAILS:
+            try:
+                login_time = now_utc.strftime("%d %b %Y at %I:%M %p UTC")
+                await send_email(
+                    to=existing["email"],
+                    subject="New Login to Your Vediccare Account 🔐",
+                    html=f"""
+                    <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#FAF9F6;border:1px solid #E8E1D5;border-radius:16px;overflow:hidden">
+                      <div style="background:linear-gradient(135deg,#C85A17,#e07040);padding:28px 32px;text-align:center">
+                        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:700">🌿 Vediccare</h1>
+                        <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Security Alert (Google Sign-In)</p>
+                      </div>
+                      <div style="padding:32px">
+                        <h2 style="color:#2C2C2C;font-size:20px;margin:0 0 8px">Hello, {existing['name']} 👋</h2>
+                        <p style="color:#5C5C5C;line-height:1.6;margin:0 0 16px">
+                          We detected a new login to your Vediccare account using Google. Here are the details:
+                        </p>
+                        <div style="background:#fff;border:1px solid #E8E1D5;border-radius:12px;padding:16px;margin:16px 0">
+                          <table style="width:100%;font-size:13px;border-collapse:collapse">
+                            <tr><td style="color:#888;padding:6px 0">Account</td><td style="color:#2C2C2C;font-weight:600;text-align:right">{existing['email']}</td></tr>
+                            <tr><td style="color:#888;padding:6px 0">Time</td><td style="color:#2C2C2C;font-weight:600;text-align:right">{login_time}</td></tr>
+                            <tr><td style="color:#888;padding:6px 0">Login #{login_count}</td><td style="color:#C85A17;font-weight:600;text-align:right">✓ Successful</td></tr>
+                          </table>
+                        </div>
+                        <p style="background:#FEF2F2;border-left:4px solid #EF4444;padding:12px 16px;border-radius:0 8px 8px 0;color:#7F1D1D;font-size:13px;margin:0 0 20px">
+                          🔒 If this was not you, please secure your Google account immediately.
+                        </p>
+                        <p style="color:#888;font-size:12px;margin:20px 0 0;border-top:1px solid #E8E1D5;padding-top:16px">
+                          <strong>Vediccare</strong> — Ayurvedic Healthcare Platform
+                        </p>
+                      </div>
+                    </div>"""
+                )
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+
         token = create_token(existing["id"], existing["role"])
         return {
             "token": token,
