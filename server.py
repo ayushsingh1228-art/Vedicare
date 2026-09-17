@@ -102,6 +102,8 @@ class UserOut(BaseModel):
     role: str
     specialization: Optional[str] = None
     is_verified: Optional[bool] = False
+    abha_id: Optional[str] = None
+    medical_registration_number: Optional[str] = None
 
 
 class UserVerifyUpdate(BaseModel):
@@ -127,6 +129,8 @@ class AppointmentUpdate(BaseModel):
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
     password: Optional[str] = None
+    abha_id: Optional[str] = None
+    medical_registration_number: Optional[str] = None
 
 
 class RecordUpdate(BaseModel):
@@ -378,6 +382,11 @@ async def update_profile(data: ProfileUpdate, user=Depends(get_current_user)):
         update["name"] = data.name.strip()
     if data.password and len(data.password) >= 6:
         update["password"] = hash_password(data.password)
+    if data.abha_id:
+        update["abha_id"] = data.abha_id.strip()
+    if data.medical_registration_number:
+        update["medical_registration_number"] = data.medical_registration_number.strip()
+        
     if not update:
         raise HTTPException(status_code=400, detail="Nothing to update")
     await db.users.update_one({"id": user["id"]}, {"$set": update})
