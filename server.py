@@ -342,6 +342,42 @@ async def register(data: UserRegister):
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.users.insert_one(doc)
+
+    # Send welcome email (non-blocking — skip demo accounts)
+    _DEMO_EMAILS = {"demo@vediccare.app", "doctor@vediccare.app", "admin@vediccare.app"}
+    if data.email.lower() not in _DEMO_EMAILS:
+        try:
+            role_word = "Doctor" if data.role == "doctor" else "Patient"
+            await send_email(
+                to=data.email.lower(),
+                subject="Welcome to Vediccare — Your Ayurvedic Health Journey Begins 🌿",
+                html=f"""
+                <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#FAF9F6;border:1px solid #E8E1D5;border-radius:16px;overflow:hidden">
+                  <div style="background:linear-gradient(135deg,#C85A17,#e07040);padding:28px 32px;text-align:center">
+                    <h1 style="color:#fff;margin:0;font-size:26px;font-weight:700;letter-spacing:-0.5px">🌿 Vediccare</h1>
+                    <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Ayurvedic Healthcare Platform</p>
+                  </div>
+                  <div style="padding:32px">
+                    <h2 style="color:#2C2C2C;font-size:20px;margin:0 0 8px">Namaste, {data.name}! 🙏</h2>
+                    <p style="color:#5C5C5C;line-height:1.6;margin:0 0 16px">
+                      Your <strong>{role_word}</strong> account on Vediccare has been successfully created.
+                      You can now access personalised Ayurvedic consultations, health records, and our AI wellness assistant.
+                    </p>
+                    <div style="background:#fff;border:1px solid #E8E1D5;border-radius:12px;padding:16px;margin:20px 0">
+                      <p style="margin:0;color:#888;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">Your registered email</p>
+                      <p style="margin:4px 0 0;color:#C85A17;font-weight:600;font-size:15px">{data.email.lower()}</p>
+                    </div>
+                    {"<p style='background:#FFF3E0;border-left:4px solid #C85A17;padding:12px 16px;border-radius:0 8px 8px 0;color:#7A3500;font-size:13px;margin:0 0 20px'>⚕️ As a Doctor, your account is under review. You can complete verification by adding your Medical Registration Number in your Profile page.</p>" if data.role == "doctor" else ""}
+                    <p style="color:#888;font-size:12px;margin:20px 0 0;border-top:1px solid #E8E1D5;padding-top:16px">
+                      If you did not create this account, please ignore this email or contact support.<br>
+                      <strong>Vediccare</strong> — Powered by Ministry of AYUSH guidelines & AI
+                    </p>
+                  </div>
+                </div>"""
+            )
+        except Exception:
+            pass  # Never block registration if email fails
+
     token = create_token(user_id, data.role)
     return {"token": token, "user": {"id": user_id, "name": data.name, "email": data.email.lower(), "role": data.role, "specialization": doc["specialization"], "is_verified": True}}
 
@@ -353,11 +389,51 @@ async def login(data: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     login_count = int(user.get("login_count", 0)) + 1
-    now = datetime.now(timezone.utc).isoformat()
-    await db.users.update_one({"id": user["id"]}, {"$set": {"login_count": login_count, "last_login_at": now}})
+    now_utc = datetime.now(timezone.utc)
+    now_str = now_utc.isoformat()
+    await db.users.update_one({"id": user["id"]}, {"$set": {"login_count": login_count, "last_login_at": now_str}})
+
+    # Send login alert email (non-blocking — skip demo accounts)
+    _DEMO_EMAILS = {"demo@vediccare.app", "doctor@vediccare.app", "admin@vediccare.app"}
+    if user["email"] not in _DEMO_EMAILS:
+        try:
+            login_time = now_utc.strftime("%d %b %Y at %I:%M %p UTC")
+            await send_email(
+                to=user["email"],
+                subject="New Login to Your Vediccare Account 🔐",
+                html=f"""
+                <div style="font-family:sans-serif;max-width:520px;margin:auto;background:#FAF9F6;border:1px solid #E8E1D5;border-radius:16px;overflow:hidden">
+                  <div style="background:linear-gradient(135deg,#C85A17,#e07040);padding:28px 32px;text-align:center">
+                    <h1 style="color:#fff;margin:0;font-size:26px;font-weight:700">🌿 Vediccare</h1>
+                    <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px">Security Alert</p>
+                  </div>
+                  <div style="padding:32px">
+                    <h2 style="color:#2C2C2C;font-size:20px;margin:0 0 8px">Hello, {user['name']} 👋</h2>
+                    <p style="color:#5C5C5C;line-height:1.6;margin:0 0 16px">
+                      We detected a new login to your Vediccare account. Here are the details:
+                    </p>
+                    <div style="background:#fff;border:1px solid #E8E1D5;border-radius:12px;padding:16px;margin:16px 0">
+                      <table style="width:100%;font-size:13px;border-collapse:collapse">
+                        <tr><td style="color:#888;padding:6px 0">Account</td><td style="color:#2C2C2C;font-weight:600;text-align:right">{user['email']}</td></tr>
+                        <tr><td style="color:#888;padding:6px 0">Time</td><td style="color:#2C2C2C;font-weight:600;text-align:right">{login_time}</td></tr>
+                        <tr><td style="color:#888;padding:6px 0">Login #{login_count}</td><td style="color:#C85A17;font-weight:600;text-align:right">✓ Successful</td></tr>
+                      </table>
+                    </div>
+                    <p style="background:#FEF2F2;border-left:4px solid #EF4444;padding:12px 16px;border-radius:0 8px 8px 0;color:#7F1D1D;font-size:13px;margin:0 0 20px">
+                      🔒 If this was not you, please change your password immediately from your Profile page.
+                    </p>
+                    <p style="color:#888;font-size:12px;margin:20px 0 0;border-top:1px solid #E8E1D5;padding-top:16px">
+                      <strong>Vediccare</strong> — Ayurvedic Healthcare Platform
+                    </p>
+                  </div>
+                </div>"""
+            )
+        except Exception:
+            pass  # Never block login if email fails
 
     token = create_token(user["id"], user["role"])
     return {"token": token, "user": {"id": user["id"], "name": user["name"], "email": user["email"], "role": user["role"], "specialization": user.get("specialization"), "is_verified": True, "login_count": login_count}}
+
 
 
 @api_router.post("/auth/demo")
